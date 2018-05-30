@@ -1,0 +1,17 @@
+@import 'variables';
+@import '~sweetalert2/src/sweetalert2';
+
+@import "~bootstrap-sass/assets/stylesheets/bootstrap";
+@import "~bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css";
+
+@import 'elements/card';
+@import 'elements/navbar';
+@import 'elements/buttons';
+@import 'elements/transitions';
+
+@import '~font-awesome/scss/font-awesome.scss';
+@import '~font-awesome/css/font-awesome.css';
+
+@import "~admin-lte/dist/css/adminLTE.css";
+
+@import "~admin-lte/dist/css/skins/_all-skins.css";
