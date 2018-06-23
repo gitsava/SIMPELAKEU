@@ -1,11 +1,7 @@
 <template>
-    <!-- TABLE: Transaksi umum -->
+    <!-- TABLE: Transaksi unit -->
     <section class="content">
         <div class="row">
-            <tambah/>
-        </div>
-        <div class="row">
-            <Tables :page="page" :currentPage="currentPage" :indexList="indexList" :isloading="isloading" :list="filteredData"/>
             <div class="modal fade" id="modal-generate">
                 <div class="modal-dialog middle" >
                     <div class="modal-content">
@@ -22,6 +18,7 @@
                     </div>
                 </div>
             </div>
+            <Tables :empty="empty" :page="page" :currentPage="currentPage" :indexList="indexList" :list="filteredData" :isloading="isloading"/>
             <div class="modal fade" id="modal-edit">
                 <div class="modal-dialog" >
                     <div class="modal-content">
@@ -37,7 +34,7 @@
                                 <div class="form-group">
                                     <label>Jenis Transaksi</label>
                                     <select class="form-control" v-model="jenisTransaksi" @change="changeJenisTransaksi()">
-                                        <option value="1">Transaksi Umum</option>
+                                        <option value="1">Transaksi unit</option>
                                         <option value="2">Transaksi Bank</option>
                                         <option value="3">Transaksi Proyek</option>
                                         <option value="4">Transaksi Unit</option>
@@ -113,26 +110,21 @@
             </div>
             <!-- /.modal -->
         </div>
+        <div v-if="empty" style="margin-bottom:300px"></div>
     </section>
     <!-- /.box -->
 </template>
 
 <script>
-    import Tambah from '~/pages/transaksi/tambah'
-    import Tables from '~/pages/transaksi/table'
-    import Form from 'vform';
+    import Tables from '~/pages/transaksi/unit/table'
     import Datepicker from 'vuejs-datepicker';
+    import Form from 'vform';
     import Cookies from 'js-cookie'
     export default {
         layout: 'default',
-        middleware: 'auth',
         components: {
-            Tambah,
             Tables,
             Datepicker
-        },
-        metaInfo () {
-            return { title: 'Transaksi' }
         },
         data: () => ({
             form: new Form({
@@ -156,10 +148,7 @@
             transaksiList : [],
             isloading: false,
             jenisTransaksi: null,
-            idKat:{
-                    value: null,
-                    label: null
-            },
+            idKat:null,
             kategoriOptions: [],
             picOptions: [],
             simpananOptions:[],
@@ -182,22 +171,34 @@
             seq: [],
             limit: 10,
             filteredData: [],
-            isGenerating : false
+            empty: true,
+            selectedKategori: null,
         }),
         created(){
-            Cookies.set('p', 0, { expires: null })
+            Cookies.set('p', 1, { expires: null })
+            Cookies.set('t', 3, { expires: null })
         },
         methods: {
-            getAllTransaksi(tahun){
+            getTransaksiunit(idKategori,tahun){
+                console.log(idKategori + ' ' + tahun)
                 this.isloading = true;
-                let url = '/api/transaksi/fetch?tahun='+tahun;
+                let url = '/api/transaksiunit/fetch?tahun='+tahun+'&idUnit='+idKategori
+                console.log(url)
                 fetch(url)
                   .then(res => res.json())
                   .then(res => {
-                    this.transaksiList = res.data;
+                    if(!res.empty){
+                        this.transaksiList = res.data;
+                        this.isloading = false
+                        this.empty = false
+                    }
+                    else{
+                        this.transaksiList = [];
+                        this.isloading = false
+                        this.empty = true
+                    }
                     this.filteredData = this.transaksiList;
                     this.createPagination();
-                    this.isloading = false;
                   })
                   .catch(err => console.log(err));
             },
@@ -232,8 +233,10 @@
                         this.maybeLoadKategori()
                         this.form.idTransaksi = data.id_transaksi
                         this.defaultTrans = data.jenis_transaksi
-                        this.idKat.value = data.id_kat
-                        this.idKat.label = data.nama_kat
+                        this.idKat = {
+                            value: data.id_kat,
+                            label: data.nama_kat
+                        }
                         this.defaultKat = data.id_kat
                         this.form.idPegawai.value = data.id_pegawai
                         this.form.idPegawai.label = data.nama_pegawai
@@ -264,7 +267,7 @@
                 let date = new Date(this.form.tanggal)
                 this.form.patch(url)
                     .then(({data})=>{
-                        this.getAllTransaksi(date.getFullYear())
+                        this.getTransaksiunit(this.selectedKategori,date.getFullYear())
                         $("#modal-edit").modal('hide')
                     })
                     .catch(err => console.log(err));
@@ -291,7 +294,7 @@
                 let date = new Date(this.transaksiList[i].tanggal)
                 this.form.patch(url)
                     .then(({data})=>{
-                        this.getAllTransaksi(date.getFullYear())
+                        this.getTransaksiunit(this.selectedKategori,date.getFullYear())
                         this.$swal(
                             'Terhapus!',
                             'Transaksi '+this.transaksiList[i].keterangan+' telah berhasil dihapus.',
@@ -393,7 +396,7 @@
                 var name = '';
                 switch (+idTrans){
                     case 1:
-                        url = '/api/transaksiumum/getallkategorilist';
+                        url = '/api/transaksiunit/getallkategorilist';
                         name = 'nama_kategori';
                         break;
                     case 2:
@@ -403,10 +406,6 @@
                     case 3:
                         url = '/api/transaksiproyek/getallproyeklist';
                         name = 'nama_proyek';
-                        break;
-                    case 4:
-                        url = '/api/transaksiunit/getallunitlist';
-                        name = 'nama';
                         break;
                     default: 
                         url = '';

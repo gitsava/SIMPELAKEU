@@ -38,7 +38,7 @@
                     </div>
                     <div class="col-xs-12 col-md-2">
                         <div class="form-group">
-                            <button class="btn btn-primary" @click="downloadExcel()">Download Excel</button>
+                            <button class="btn btn-primary" :class="{disabled: list.length == 0}" @click="downloadExcel()">Download Excel</button>
                         </div>
                     </div>
                 </div>
@@ -157,11 +157,21 @@
                 this.$parent.deleteAlertShow(i)
             },
             downloadExcel(){
+                this.$parent.showGenerate()
+                let urlGenerate = '/api/generateexcel/laporantahunan?tahun='+this.tahun
                 let url = '/api/downloadexcel/laporantahunan?tahun='+this.tahun
-                var result = document.createElement('a'); 
+                fetch(urlGenerate)
+                  .then(res => res.json())
+                  .then(res => {
+                    if(res.status == true){
+                      var result = document.createElement('a'); 
                       result.href = url;
                       result.download = 'Laporan Keuangan '+this.tahun+'.xlsx';
                       result.click();
+                      this.$parent.hideGenerate()
+                    }
+                  })
+                  .catch(err => console.log(err));
             },
             changePage(toPage){
                 this.$parent.currentPage = toPage

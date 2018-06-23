@@ -129,11 +129,13 @@
                 </div>
             </div>
         </div>
+        <div v-if="empty" style="margin-bottom:300px"></div>
     </section>
 </template>
 
 <script>
     import Form from 'vform'
+    import Cookies from 'js-cookie'
     export default {
         layout: 'default',
         props: {
@@ -177,6 +179,7 @@
         }),
         created(){
             this.getAllPenggunaanDana(null)
+            Cookies.set('p', 2, { expires: null })
         },
         methods: {
             loadData: function(loadStatus){

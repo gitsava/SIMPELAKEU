@@ -15,12 +15,14 @@ use App\Simpanan;
 use App\Http\Controllers\TransaksiBankController;
 use App\Http\Controllers\TransaksiUmumController;
 use App\Http\Controllers\TransaksiProyekController;
+use App\Http\Controllers\TransaksiUnitController;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\HistoriSaldoSimpananPerbulan as HistoriSimpanan;
 use App\HistoriSaldoKategoriPerbulan as HistoriKategori;
 use App\HistoriSaldoProyekPerbulan as HistoriProyek;
+use App\HistoriSaldoUnitPerbulan as HistoriUnit;
 use App\Http\Resources\Transaksi as TransaksiResource;
 
 class TransaksiController extends Controller
@@ -96,6 +98,10 @@ class TransaksiController extends Controller
                             function($query){
                                 $query->with(['proyek']);
                             }
+                        ])->with(['transaksiUnit'=>
+                            function($query){
+                                $query->with(['Unit']);
+                            }
                         ])->with(['transaksiBank'=>
                             function($query){
                                 $query->with(['simpanan'])->where('id_bank','<>',1);
@@ -116,6 +122,11 @@ class TransaksiController extends Controller
                     $data['id_kat'] = $transaksi->transaksiProyek[0]->id_kegiatan;
                     $data['tipe_nominal']= $transaksi->transaksiProyek[0]->tipe_nominal;
                     $data['nama_kat']= $transaksi->transaksiProyek[0]->proyek->nama_kegiatan;
+                }
+                if(!$transaksi->transaksiUnit->isEmpty()){
+                    $data['id_kat'] = $transaksi->transaksiUnit[0]->id_unit;
+                    $data['tipe_nominal']= $transaksi->transaksiUnit[0]->tipe_nominal;
+                    $data['nama_kat']= $transaksi->transaksiUnit[0]->Unit->nama;
                 }
                 if(!$transaksi->transaksiBank->isEmpty()){
                     if($request->jenisTransaksi != 2){
@@ -153,6 +164,10 @@ class TransaksiController extends Controller
                             function($query){
                                 $query->with(['proyek']);
                             }
+                        ])->with(['transaksiUnit'=>
+                            function($query){
+                                $query->with(['Unit']);
+                            }
                         ])->with(['transaksiBank'=>
                             function($query){
                                 $query->with(['simpanan']);
@@ -177,6 +192,10 @@ class TransaksiController extends Controller
                     $umumControl = new TransaksiUmumController;
                     $umumControl->deleteTransUmum($transaksi->transaksiUmum[0],$transaksi->nominal);
                 }
+                elseif(!$transaksi->transaksiUnit->isEmpty()){
+                    $unitControl = new TransaksiUnitController;
+                    $unitControl->deleteTransUnit($transaksi->transaksiUnit[0],$transaksi->nominal);
+                }
                 if(isset($request->idProyek)){
                     $proyekControl = new TransaksiProyekController;
                     // menyimpan kategori type sesuai input
@@ -184,12 +203,18 @@ class TransaksiController extends Controller
                                         $transaksi->id,$request->idProyek['value'],
                                         $request->nominalType,$request->nominal,
                                         $tanggal);
-                }
-                elseif(isset($request->idKategori)){
+                }elseif(isset($request->idKategori)){
                     $umumControl = new TransaksiUmumController;
                     // menyimpan kategori type sesuai input
                     $transUmumStatus = $transUmumControl->storeTransUmum(
                                     $transaksi->id,$request->idKategori['value'],
+                                    $request->nominalType,$request->nominal,
+                                    $tanggal);
+                }elseif(isset($request->idUnit)){
+                    $unitControl = new TransaksiUnitController;
+                    // menyimpan kategori type sesuai input
+                    $transUnitStatus = $transUnitControl->storeTransUnit(
+                                    $transaksi->id,$request->idUnit['value'],
                                     $request->nominalType,$request->nominal,
                                     $tanggal);
                 }elseif(isset($request->idSimpanan)){
@@ -310,6 +335,19 @@ class TransaksiController extends Controller
                                             $request->nominalType,$transaksi->nominal,
                                             $transaksi->tanggal);
                 }
+                // jika ada yang di simpan di proyek
+                if(isset($request->idUnit)){
+                    $transUnitControl = new TransaksiUnitController;
+                    // menyimpan di cash type sesuai input
+                    $transCashStatus = $transBankControl->storeTransBank(
+                                        $transaksi->id,$idCash,$request->nominalType,
+                                        $transaksi->nominal,$transaksi->tanggal);
+                    // menyimpan kategori type sesuai input
+                    $transUnitStatus = $transUnitControl->storeTransUnit(
+                                            $transaksi->id,$request->idUnit['value'],
+                                            $request->nominalType,$transaksi->nominal,
+                                            $transaksi->tanggal);
+                }
                 return ['status'=>true];
             }
             else{
@@ -334,6 +372,10 @@ class TransaksiController extends Controller
                 $transProyekControl = new TransaksiProyekController;
                 $transProyekControl->deleteTransProyek($transaksi->transaksiProyek->first(),$transaksi->nominal,$transaksi->tanggal);
             }
+            if($transaksi->transaksiUnit->first() != null){
+                $transUnitControl = new TransaksiUnitController;
+                $transUnitControl->deleteTransUnit($transaksi->transaksiUnit->first(),$transaksi->nominal,$transaksi->tanggal);
+            }
             foreach($transaksi->transaksiBank as $transBankRow){
                 $transBankControl->deleteTransBank($transBankRow,$transaksi->nominal,$transaksi->tanggal);
             }
@@ -347,6 +389,9 @@ class TransaksiController extends Controller
         /* ambil semua id kegiatan yang ada di tahun request */
         $proyekList = HistoriProyek::select('id_kegiatan')->where('tahun',$tahun)->distinct()->get();
         $idProyekAll = $proyekList->map(function ($item, $key) { return $item->id_kegiatan;})->toArray();
+        /* ambil semua id unit yang ada di tahun request */
+        $unitList = HistoriUnit::select('id_unit')->where('tahun',$tahun)->distinct()->get();
+        $idUnitAll = $unitList->map(function ($item, $key) { return $item->id_unit;})->toArray();
         /* ambil semua id bank yang ada di tahun request */
         $simpananList = HistoriSimpanan::select('id_bank')->where('tahun',$tahun)->distinct()->get();
         $idSimpananAll = $simpananList->map(function ($item, $key) { return $item->id_bank;})->toArray();
@@ -366,6 +411,12 @@ class TransaksiController extends Controller
         $idProyekBulan = $historiProyekBulan->map(function ($item, $key) { return $item->id_kegiatan;})->toArray();
         /* substract proyek all dengan bulan */
         $idProyekDiff = array_diff($idProyekAll,$idProyekBulan);
+        $historiUnitBulan = HistoriUnit::with(['Unit'])->where('bulan',$bulan)
+                              ->where('tahun',$tahun)->get();
+        /* ambil semua id kegiatan yang ada di tahun dan bulan request return to array */
+        $idUnitBulan = $historiUnitBulan->map(function ($item, $key) { return $item->id_unit;})->toArray();
+        /* substract proyek all dengan bulan */
+        $idUnitDiff = array_diff($idUnitAll,$idUnitBulan);
         $historiKategoriBulan = HistoriKategori::with(['kategori'])->where('bulan',$bulan)
                               ->where('tahun',$tahun)->get();
         /* ambil semua id kategori yang ada di tahun dan bulan request return to array */
@@ -436,6 +487,38 @@ class TransaksiController extends Controller
             }
             $dataIndex++;
         }
+        //
+        foreach($historiUnitBulan as $hist){
+            $data[$dataIndex] = [
+                'kegiatan'=> $hist->Unit->nama,
+                'saldo'=> $hist->saldo
+            ];
+            $dataIndex++;
+        }
+        foreach($idUnitDiff as $id){
+            $historiPrev = HistoriUnit::with(['Unit'])->where('id_unit',$id)
+                           ->where(function($first) use ($tahun,$bulan)
+                            {
+                                $first->where(function($second) use ($tahun,$bulan){
+                                    $second->where('tahun',(int)$tahun)->where('bulan','<',(int)$bulan);
+                                })->orWhere('tahun','<',(int)$tahun);
+                            })->orderBy('tahun','desc')->orderBy('bulan','desc')->first();
+            
+            if(!is_null($historiPrev)){
+                $data[$dataIndex] = [
+                    'kegiatan'=> $historiPrev->Unit->nama,
+                    'saldo'=> $historiPrev->saldo
+                ];  
+            }else{
+                $unit = Unit::find($id);
+                $data[$dataIndex] = [
+                    'kegiatan'=> $unit->nama,
+                    'saldo'=> '-'
+                ];  
+            }
+            $dataIndex++;
+        }
+        //
         foreach($historiSimpananBulan as $hist){
             $dataSimpanan[$dataSimpananIndex] = [
                 'kegiatan'=> $hist->simpanan->nama_bank,
@@ -666,7 +749,7 @@ class TransaksiController extends Controller
                        })->store('xls');
     }
 
-    public function downloadRekap($tahun){
+    public function generateRekap($tahun){
         $rekap = $this->fetchRekap($tahun);
         $data = $this->cvtRekapToArray($rekap);
         $filename = 'REKAP LAPORAN KEUANGAN JANUARI-DESEMBER '.$tahun;
@@ -674,6 +757,11 @@ class TransaksiController extends Controller
         $title = 'REKAPITULASI LAPORAN KEUANGAN';
         $this->rekapExcel($data,$filename,$sheetname,$title);
         $this->xlsToXlsx(storage_path('exports/'.$filename.'.xls'),$filename);
+        return ['status'=>true];
+    }
+
+    public function downloadRekap($tahun){
+        $filename = 'REKAP LAPORAN KEUANGAN JANUARI-DESEMBER '.$tahun;
         $fileContents = Storage::disk('export')->get($filename.'.xlsx');
         $response = Response::make($fileContents, 200);
         $response->header('Content-Type', MimeType::get('xlsx'));
@@ -790,6 +878,10 @@ class TransaksiController extends Controller
                                         function($query){
                                             $query->with(['proyek']);
                                         }
+                                    ])->with(['transaksiUnit'=>
+                                        function($query){
+                                            $query->with(['Unit']);
+                                        }
                                     ])->with(['transaksiBank'=>
                                         function($query){
                                             $query->with(['simpanan']);
@@ -867,6 +959,21 @@ class TransaksiController extends Controller
                         }
                         $kategoriIndex++;
                     }
+                    if(isset($transRow->transaksiUnit) && !$transRow->transaksiUnit->isEmpty()){
+                        $kategori[$kategoriIndex] = [
+                            'id'=>$transRow->transaksiUnit[0]->id,
+                            'nama'=>$transRow->transaksiUnit[0]->Unit->nama,
+                            'type'=>'',
+                            'nominal'=> $transRow->nominal,
+                            'jenis_transaksi'=> 4,
+                            'delete_able'=>true
+                        ];
+                        if(count($transRow->transaksiBank) == 3){
+                            $kategori[$kategoriIndex-1]['jenis_transaksi'] = $kategori[$kategoriIndex]['jenis_transaksi'];
+                            $kategori[$kategoriIndex-1]['delete_able'] = false;
+                        }
+                        $kategoriIndex++;
+                    }
                     //$kategoriIndex = 0;
                     Storage::disk('local')->append($path, json_encode($kategori));
                     //iterate transaksi bank yang cash
@@ -933,7 +1040,7 @@ class TransaksiController extends Controller
         }
     }
 
-    public function downloadLaporan(Request $request){
+    public function generateLaporan(Request $request){
         $data = $this->getAllTransaksi($request);
         $array = $this->cvtArray($data['data']);
         $filename = 'Laporan Keuangan '.$request->tahun;
@@ -941,6 +1048,11 @@ class TransaksiController extends Controller
         $title = 'Laporan Keuangan Pusat Studi Biofarmaka Tropika LPPM IPB Tahun '.$request->tahun;
         $this->createExcel($array['array'],$filename,$sheetname,$title,$array['width']);
         $this->xlsToXlsx(storage_path('exports/'.$filename.'.xls'),$filename);
+        return ['status'=>true];
+    }
+
+    public function downloadLaporan(Request $request){
+        $filename = 'Laporan Keuangan '.$request->tahun;
         $fileContents = Storage::disk('export')->get($filename.'.xlsx');
         $response = Response::make($fileContents, 200);
         $response->header('Content-Type', MimeType::get('xlsx'));

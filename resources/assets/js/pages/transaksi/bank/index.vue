@@ -5,6 +5,22 @@
             <tambah/>
         </div>-->
         <div class="row">
+            <div class="modal fade" id="modal-generate">
+                <div class="modal-dialog middle" >
+                    <div class="modal-content">
+                        <div class="modal-header">
+                        <h4 class="modal-title" style="text-align:center">Generating Excel File</h4>
+                        </div>
+                        <div class="modal-body">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width:100%">
+                                Please Wait...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <Tables :empty="empty" :page="page" :currentPage="currentPage" :indexList="indexList" :list="filteredData" :isloading="isloading"/>
             <div class="modal fade" id="modal-edit">
                 <div class="modal-dialog" >
@@ -96,6 +112,7 @@
             </div>
             <!-- /.modal -->
         </div>
+        <div v-if="empty" style="margin-bottom:300px"></div>
     </section>
     <!-- /.box -->
 </template>
@@ -105,6 +122,7 @@
     import Tables from '~/pages/transaksi/bank/table'
     import Datepicker from 'vuejs-datepicker';
     import Form from 'vform';
+    import Cookies from 'js-cookie'
     export default {
         layout: 'default',
         components: {
@@ -159,6 +177,10 @@
             empty: true,
             selectedBank: null,
         }),
+        created(){
+            Cookies.set('p', 1, { expires: null })
+            Cookies.set('t', 2, { expires: null })
+        },
         methods: {
             getTransaksiBank(idBank,tahun){
                 this.isloading = true;
@@ -405,7 +427,19 @@
                     }
                   })
                   .catch(err => console.log(err));
+            },
+            showGenerate(){
+                $("#modal-generate").modal({ keyboard: false, backdrop: 'static' })
+                $("#modal-generate").modal('show')
+            },
+            hideGenerate(){
+                $("#modal-generate").modal('hide')
             }
         }
     }
 </script>
+<style>
+  .middle{
+    margin: 11% 25%;
+  }  
+</style>

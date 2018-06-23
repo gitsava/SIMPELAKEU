@@ -2,7 +2,7 @@
     <div class="col-md-12">
         <div class="box box-info">
             <div class="box-header with-border">
-                <h3 class="box-title">Riwayat Transaksi Umum</h3>
+                <h3 class="box-title">Riwayat Transaksi Unit</h3>
                 <button type="button" class="btn btn-primary pull-right" :class="{disabled: list.length == 0}" @click="downloadExcel">Download Excel</button>
             </div>
             <div v-if="isloading" class="overlay">
@@ -14,8 +14,8 @@
                     <div class="col-xs-12 col-md-5">
                         <div class="form-group">
                             <div class="input-group">
-                                <span class="input-group-addon">Kategori</span>
-                                <v-select ref="select" v-model="kategori" :options="kategoriOptions" :settings="kategoriSetting" @search:focus="maybeLoadKategori"/>
+                                <span class="input-group-addon">Unit</span>
+                                <v-select ref="select" v-model="unit" :options="unitOptions" :settings="unitSetting" @search:focus="maybeLoadunit"/>
                             </div>
                         </div>
                     </div>
@@ -58,7 +58,7 @@
                                 <th>Debit</th>
                                 <th>Kredit</th>
                                 <th>Saldo</th>
-                                <th>Kategori</th>
+                                <th>Unit</th>
                                 <th>Aksi</th>
                                 </tr>
                                 </thead>
@@ -140,9 +140,9 @@
         },
         data: () => ({
             success : 'success',
-            kategori: null,
-            kategoriOptions: [],
-            kategoriSetting: {
+            unit: null,
+            unitOptions: [],
+            unitSetting: {
                 width:'100%'
             },
             date : new Date(),
@@ -153,15 +153,15 @@
         methods: {
             loadData: function(){
                 this.tahun = this.date.getFullYear()
-                this.$parent.getTransaksiUmum(this.kategori['value'],this.tahun)
+                this.$parent.getTransaksiunit(this.unit['value'],this.tahun)
             },
             edit: function(i){
                 this.$parent.editModalShow(i)
-                this.$parent.selectedKategori = this.kategori['value']
+                this.$parent.selectedunit = this.unit['value']
             },
             deleteAlert : function(i){
                 this.$parent.deleteAlertShow(i)
-                this.$parent.selectedKategori = this.kategori['value']
+                this.$parent.selectedunit = this.unit['value']
             },
             changePage(toPage){
                 this.$parent.currentPage = toPage
@@ -171,8 +171,8 @@
                 console.log(this.list)
             },
             downloadExcel(){
-                var url = "/api/downloadexcel/laporantahunanumum?tahun="+this.tahun+"&idKategori="+this.kategori['value']
-                let urlGenerate = '/api/generateexcel/laporantahunanumum?tahun='+this.tahun+"&idKategori="+this.kategori['value']
+                var url = "/api/downloadexcel/laporantahunanunit?tahun="+this.tahun+"&idUnit="+this.unit['value']
+                let urlGenerate = '/api/generateexcel/laporantahunanunit?tahun='+this.tahun+"&idUnit="+this.unit['value']
                 this.$parent.showGenerate()
                 fetch(urlGenerate)
                   .then(res => res.json())
@@ -180,18 +180,18 @@
                     if(res.status == true){
                       var result = document.createElement('a'); 
                       result.href = url;
-                      result.download = 'Laporan Keuangan '+this.kategori['label']+' '+this.tahun+'.xlsx';
+                      result.download = 'Laporan Keuangan '+this.unit['label']+' '+this.tahun+'.xlsx';
                       result.click();
                       this.$parent.hideGenerate()
                     }
                   })
                   .catch(err => console.log(err));
             },
-            maybeLoadKategori() {
-                return this.kategoriOptions.length <= 0 ? this.getAllKategoriList() : null
+            maybeLoadunit() {
+                return this.unitOptions.length <= 0 ? this.getAllunitList() : null
             },
-            getAllKategoriList(){
-                let url = '/api/transaksiumum/getallkategorilist'
+            getAllunitList(){
+                let url = '/api/transaksiunit/getallunitlist'
                 let self = this
                 this.$refs.select.toggleLoading(true)
                 fetch(url)
@@ -199,8 +199,8 @@
                     .then(res => {
                         let data = res.data;
                         for(var i = 0; i < data.length; i++){
-                            self.kategoriOptions.push({
-                                label : data[i].nama_kategori,
+                            self.unitOptions.push({
+                                label : data[i].nama,
                                 value : data[i].id
                             })
                         }

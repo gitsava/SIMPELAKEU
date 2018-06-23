@@ -14,12 +14,12 @@
                                 <input class="form-control" type="text" v-model="form.namaSimpanan" placeholder="Isikan nama simpanan ...">
                             </div>
                         </div>
-                        <div class="col-xs-12 col-md-5">
+                        <!--<div class="col-xs-12 col-md-5">
                             <div class="form-group">
                                 <label>Saldo Awal</label>
                                 <input class="form-control" type="text" v-model="form.saldoAwal" placeholder="Isikan jika ada ...">
                             </div>
-                        </div>
+                        </div>-->
                         <div class="col-xs-12 col-md-2">
                             <div class="form-group">
                                 <label>&nbsp</label>

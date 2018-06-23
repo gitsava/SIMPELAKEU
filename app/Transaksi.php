@@ -32,4 +32,8 @@ class Transaksi extends Model
     {
         return $this->hasMany('App\TransaksiProyek','id_transaksi');
     }
+    public function transaksiUnit()
+    {
+        return $this->hasMany('App\TransaksiUnit','id_transaksi');
+    }
 }

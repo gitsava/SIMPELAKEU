@@ -169,7 +169,7 @@ class TransaksiUmumController extends Controller
         }
     }
 
-    public function downloadExcelUmum(Request $request){
+    public function generateExcelUmum(Request $request){
         try{
             $data = $this->getAllTransaksiUmum($request);
             if($data['empty'] == false){
@@ -182,16 +182,23 @@ class TransaksiUmumController extends Controller
                 $title = 'Laporan Keuangan '.$sheetname;
                 $transaksiController->createExcel($array['array'],$filename,$sheetname,$title,$array['width']);
                 $transaksiController->xlsToXlsx(storage_path('exports/'.$filename.'.xls'),$filename);
-                $fileContents = Storage::disk('export')->get($filename.'.xlsx');
-                $response = Response::make($fileContents, 200);
-                $response->header('Content-Type', MimeType::get('xlsx'));
-                return $response;
+                return ['status'=>true];
             }else{
                 return ['error'=>'Tidak ada data yang tersedia'];
             }
         }catch(Exception $err){
             Log::info($err);
         }
+    }
+
+    public function downloadExcelUmum(Request $request){
+        $kategori = KategoriUmum::find($request->idKategori);
+        $sheetname = $kategori->nama_kategori;
+        $filename = 'Laporan Keuangan Proyek '.$sheetname.' '.$request->tahun;
+        $fileContents = Storage::disk('export')->get($filename.'.xlsx');
+        $response = Response::make($fileContents, 200);
+        $response->header('Content-Type', MimeType::get('xlsx'));
+        return $response;
     }
 
     /* Mengurangi saldo umum, mengurangi saldo umum perbulan, dan menghapus transaksiUmum */

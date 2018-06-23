@@ -231,7 +231,7 @@ class TransaksiBankController extends Controller
         }
     }
 
-    public function downloadExcelBank(Request $request){
+    public function generateExcelBank(Request $request){
         try{
             $path = 'logger.txt';
             $data = $this->getAllTransaksiBank($request);
@@ -245,16 +245,23 @@ class TransaksiBankController extends Controller
                 $title = 'Rekening '.$sheetname;
                 $transaksiController->createExcel($array['array'],$filename,$sheetname,$title,$array['width']);
                 $transaksiController->xlsToXlsx(storage_path('exports/'.$filename.'.xls'),$filename);
-                $fileContents = Storage::disk('export')->get($filename.'.xlsx');
-                $response = Response::make($fileContents, 200);
-                $response->header('Content-Type', MimeType::get('xlsx'));
-                return $response;
+                return ['status'=> true];
             }else{
                 return ['error'=>'Tidak ada data yang tersedia'];
             }
         }catch(Exception $err){
             Log::info($err);
         }
+    }
+
+    public function downloadExcelBank(Request $request){
+        $simpanan = Simpanan::find($request->idBank);
+        $sheetname = $simpanan->nama_bank;
+        $filename = 'Laporan Keuangan Proyek '.$sheetname.' '.$request->tahun;
+        $fileContents = Storage::disk('export')->get($filename.'.xlsx');
+        $response = Response::make($fileContents, 200);
+        $response->header('Content-Type', MimeType::get('xlsx'));
+        return $response;
     }
 
     public function editTransBank(TransaksiBank $transBank, $nominalType, $nominal, $tanggal, $idSimpanan){

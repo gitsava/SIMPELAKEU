@@ -1,5 +1,21 @@
 <template>
     <section class="content">
+        <div class="modal fade" id="modal-generate">
+            <div class="modal-dialog middle" >
+                <div class="modal-content">
+                    <div class="modal-header">
+                    <h4 class="modal-title" style="text-align:center">Generating Excel File</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width:100%">
+                            Please Wait...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="row">
             <div class="col-md-12">
                 <div class="box box-info">
@@ -115,7 +131,7 @@
                                         </template>
                                         <template v-if="!emptySimpanan">
                                             <tr>
-                                                <td></td>
+                                                <td>&nbsp;</td>
                                                 <td style="text-align:center">Total</td>
                                                 <td class="pull-right">{{ totalSaldoSimpanan }}</td>
                                             </tr>
@@ -130,10 +146,12 @@
                 </div>
             </div>
         </div>
+        <div v-if="emptySimpanan || emptyData" style="margin-bottom:200px"></div>
     </section>
 </template>
 
 <script>
+    import Cookies from 'js-cookie'
     export default {
         layout: 'default',
         props: {
@@ -155,6 +173,7 @@
                     ,'Juli','Agustus','September','November','Desember']
         }),
         created(){
+            Cookies.set('p', 7, { expires: null })
         },
         methods: {
            loadData: function(){
@@ -163,6 +182,8 @@
            getAllRekap(){
                 this.isloading = true
                 let url = '/api/transaksi/rekap/fetch/'+this.bulan+'/'+this.tahun
+                this.totalSaldoData= 0
+                this.totalSaldoSimpanan= 0
                 fetch(url)
                   .then(res => res.json())
                   .then(res => {
@@ -174,7 +195,8 @@
                     }else{
                         this.data = res.data;
                         for(var i=0; i< this.data.length; i++){
-                            this.totalSaldoData += this.data[i].saldo
+                            if(this.data[i].saldo != '-')
+                                this.totalSaldoData += this.data[i].saldo
                         }
                     }
                     if(this.emptySimpanan){
@@ -182,7 +204,8 @@
                     }else{
                         this.dataSimpanan = res.dataSimpanan
                         for(var i=0; i< this.dataSimpanan.length; i++){
-                            this.totalSaldoSimpanan += this.dataSimpanan[i].saldo
+                            if(this.dataSimpanan[i].saldo != '-')
+                                this.totalSaldoSimpanan += this.dataSimpanan[i].saldo
                         }
                     }
                     this.isloading = false
@@ -190,13 +213,28 @@
                   .catch(err => console.log(err));
             },
             downloadExcel(){
+                var urlGenerate = "/api/transaksi/rekap/generaterekap/"+this.tahunDownload
                 var url = "/api/transaksi/rekap/fetchrekap/"+this.tahunDownload
-                let self = this
-                var result = document.createElement('a'); 
+                $("#modal-generate").modal({ keyboard: false, backdrop: 'static' })
+                $("#modal-generate").modal('show')
+                fetch(urlGenerate)
+                  .then(res => res.json())
+                  .then(res => {
+                    if(res.status == true){
+                      var result = document.createElement('a'); 
                       result.href = url;
                       result.download = 'REKAP LAPORAN KEUANGAN JANUARI-DESEMBER '+this.tahunDownload+'.xlsx';
                       result.click();
+                      $("#modal-generate").modal('hide')
+                    }
+                  })
+                  .catch(err => console.log(err));
             },
         }
     }
 </script>
+<style>
+  .middle{
+    margin: 11% 25%;
+  }  
+</style>

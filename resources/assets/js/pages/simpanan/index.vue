@@ -33,6 +33,7 @@
             </div>
             <!-- /.modal -->
         </div>
+        <div v-if="empty" style="margin-bottom:300px"></div>
     </section>
     <!-- /.box -->
 </template>
@@ -53,6 +54,7 @@
     import Tambah from '~/pages/simpanan/tambah'
     import Tables from '~/pages/simpanan/table'
     import Form from 'vform'
+    import Cookies from 'js-cookie'
     export default {
         middleware: 'auth',
         layout: 'default',
@@ -74,6 +76,9 @@
             }),
             empty: true
         }),
+        created(){
+            Cookies.set('p', 6, { expires: null })
+        },
         methods: {
             getAllSimpananList(pageLink){
                 this.isloading = true;

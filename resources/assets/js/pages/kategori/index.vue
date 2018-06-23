@@ -33,6 +33,7 @@
             </div>
             <!-- /.modal -->
         </div>
+        <div v-if="empty" style="margin-bottom:300px"></div>
     </section>
     <!-- /.box -->
 </template>
@@ -41,6 +42,7 @@
     import Tambah from '~/pages/kategori/tambah'
     import Tables from '~/pages/kategori/table'
     import Form from 'vform'
+    import Cookies from 'js-cookie'
     export default {
         middleware: 'auth',
         layout: 'default',
@@ -60,7 +62,11 @@
                 idKategori: 0,
                 namaKategori: ''
             }),
+            empty: true
         }),
+        created(){
+            Cookies.set('p', 3, { expires: null })
+        },
         methods: {
             getAllKategoriList(pageLink){
                 this.isloading = true;
@@ -80,6 +86,7 @@
                     if(res.meta.current_page == res.meta.last_page) this.nextPage = true
                     else this.nextPage = false
                     this.isloading = false
+                    this.empty = false
                   })
                   .catch(err => console.log(err));
             },

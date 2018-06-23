@@ -8,31 +8,35 @@ use Storage;
 use Illuminate\Http\Request;
 use Response;
 use Illuminate\Http\Testing\MimeType;
-use App\Proyek;
+use App\Unit;
 use App\Transaksi;
-use App\TransaksiProyek;
-use App\HistoriSaldoProyekPerbulan;
+use App\TransaksiUnit;
+use App\HistoriSaldoUnitPerbulan;
 use App\Http\Controllers\TransaksiBankController;
-use App\Http\Resources\Proyek as ProyekResource;
+use App\Http\Resources\UnitResource;
 
-class TransaksiProyekController extends Controller
+class TransaksiUnitController extends Controller
 {
     //
-    public function getAllProyekList(Request $request){
+    public function reverseNominalType($nominalType){
+        if($nominalType == 'd'){
+            return 'k';
+        }
+        else return 'd';
+    }
+
+    public function getAllUnitList(Request $request){
         try{
             $path = 'logger.txt';
-            Storage::disk('local')->append($path, 'Get All Proyek List Routes');
+            Storage::disk('local')->append($path, 'Get All Unit List Routes');
             if($request->has('key')){
                 $key = $request->key;
-                $proyek = Proyek::where('nama_kegiatan','LIKE','%'.$key.'%')->paginate(10)->appends(Input::except('page'));
-                
-            }elseif($request->has('tanggal')){
-                $proyek = Proyek::where('tanggal_akhir','>=',Date('Y-m-d',strtotime($request->tanggal)))->get();
+                $Unit = Unit::where('nama','LIKE','%'.$key.'%')->orWhere('nama_panjang','LIKE','%'.$key.'%')->paginate(10)->appends(Input::except('page'));
             }else{
-                $proyek = Proyek::paginate(10);
+                $Unit = Unit::paginate(10);
             }
-            Storage::disk('local')->append($path, json_encode($proyek));
-            if(!$proyek->isEmpty()) return ProyekResource::collection($proyek)->additional(['empty'=>false]); 
+            Storage::disk('local')->append($path, json_encode($Unit));
+            if(!$Unit->isEmpty()) return UnitResource::collection($Unit)->additional(['empty'=>false]); 
             else return ['empty'=>true];
         }
         catch(Exception $err){
@@ -40,93 +44,93 @@ class TransaksiProyekController extends Controller
         }
     }
 
-    public function storeTransProyek($idTransaksi,$idProyek,$nominalType,$nominal,$tanggal){
+    public function storeTransUnit($idTransaksi,$idUnit,$nominalType,$nominal,$tanggal){
         try{
             $path = 'logger.txt';
-            Storage::disk('local')->append($path, 'Store Transaksi Proyek '.$idProyek);
+            Storage::disk('local')->append($path, 'Store Transaksi Unit '.$idUnit);
             $time  = strtotime($tanggal);
             $bulan = date('n',$time);
             $tahun  = date('Y',$time);
-            $transaksiProyek = new TransaksiProyek; 
-            $proyek = Proyek::findOrFail($idProyek);
-            $historiProyek = HistoriSaldoProyekPerbulan::where('id_kegiatan',$idProyek)->where('tahun',(int)$tahun)->where('bulan',(int)$bulan)->first();
-            $nextHistoriProyek = HistoriSaldoProyekPerbulan::where('id_kegiatan',$idProyek)->where(function($first) use ($tahun,$bulan)
+            $transaksiUnit = new TransaksiUnit; 
+            $Unit = Unit::findOrFail($idUnit);
+            $historiUnit = HistoriSaldoUnitPerbulan::where('id_unit',$idUnit)->where('tahun',(int)$tahun)->where('bulan',(int)$bulan)->first();
+            $nextHistoriUnit = HistoriSaldoUnitPerbulan::where('id_unit',$idUnit)->where(function($first) use ($tahun,$bulan)
                                         {
                                             $first->where(function($second) use ($tahun,$bulan){
                                                 $second->where('tahun',(int)$tahun)->where('bulan','>',(int)$bulan);
                                             })->orWhere('tahun','>',(int)$tahun);
                                         })->orderBy('tahun','asc')->orderBy('bulan','asc')->get();
-            if($historiProyek == null){
-                $historiProyek = new HistoriSaldoProyekPerbulan;
-                $prevHistoriProyek = HistoriSaldoProyekPerbulan::where('id_kegiatan',$idProyek)->where(function($first) use ($tahun,$bulan)
+            if($historiUnit == null){
+                $historiUnit = new HistoriSaldoUnitPerbulan;
+                $prevHistoriUnit = HistoriSaldoUnitPerbulan::where('id_unit',$idUnit)->where(function($first) use ($tahun,$bulan)
                                         {
                                             $first->where(function($second) use ($tahun,$bulan){
                                                 $second->where('tahun',(int)$tahun)->where('bulan','<',(int)$bulan);
                                             })->orWhere('tahun','<',(int)$tahun);
                                         })->orderBy('tahun','desc')->orderBy('bulan','desc')->first();
-                if($prevHistoriProyek == null){
-                    if($nextHistoriProyek->isEmpty()){
-                        $historiProyek->saldo = $proyek->saldo;
+                if($prevHistoriUnit == null){
+                    if($nextHistoriUnit->isEmpty()){
+                        $historiUnit->saldo = $Unit->saldo;
                         Storage::disk('local')->append($path, 'next empty');
                     }
                     else{
-                        $historiProyek->saldo = $nextHistoriProyek[0]->saldo;
-                        Storage::disk('local')->append($path, 'historiProyek next tahun : '.$nextHistoriProyek[0]->tahun);
-                        Storage::disk('local')->append($path, 'historiProyek next bulan : '.$nextHistoriProyek[0]->bulan);
-                        $transaksi = Transaksi::with(['transaksiProyek'=>function($query) use ($idProyek){
-                                        $query->where('id_kegiatan',$idProyek);
-                                     }])->whereYear('tanggal',$nextHistoriProyek[0]->tahun)
-                                     ->whereMonth('tanggal',$nextHistoriProyek[0]->bulan)->get();
+                        $historiUnit->saldo = $nextHistoriUnit[0]->saldo;
+                        Storage::disk('local')->append($path, 'historiUnit next tahun : '.$nextHistoriUnit[0]->tahun);
+                        Storage::disk('local')->append($path, 'historiUnit next bulan : '.$nextHistoriUnit[0]->bulan);
+                        $transaksi = Transaksi::with(['transaksiUnit'=>function($query) use ($idUnit){
+                                        $query->where('id_unit',$idUnit);
+                                     }])->whereYear('tanggal',$nextHistoriUnit[0]->tahun)
+                                     ->whereMonth('tanggal',$nextHistoriUnit[0]->bulan)->get();
                         Storage::disk('local')->append($path, 'transaksi : '.json_encode($transaksi));
                         foreach($transaksi as $trans){
-                            foreach($trans->transaksiProyek as $transProyek){
-                                if($transProyek->tipe_nominal == 'k'){
-                                    $historiProyek->saldo += $trans->nominal;
-                                    Storage::disk('local')->append($path, 'historiProyek Saldo k : '.$historiProyek->saldo);
+                            foreach($trans->transaksiUnit as $transUnit){
+                                if($transUnit->tipe_nominal == 'k'){
+                                    $historiUnit->saldo += $trans->nominal;
+                                    Storage::disk('local')->append($path, 'historiUnit Saldo k : '.$historiUnit->saldo);
                                 }
                                 else{
-                                    $historiProyek->saldo -= $trans->nominal;
-                                    Storage::disk('local')->append($path, 'historiProyek Saldo d : '.$historiProyek->saldo);
+                                    $historiUnit->saldo -= $trans->nominal;
+                                    Storage::disk('local')->append($path, 'historiUnit Saldo d : '.$historiUnit->saldo);
                                 }
                             }
                         }
-                        Storage::disk('local')->append($path, 'historiProyek Saldo akhir : '.$historiProyek->saldo);
+                        Storage::disk('local')->append($path, 'historiUnit Saldo akhir : '.$historiUnit->saldo);
                     }
                 }
                 else{
-                    $historiProyek->saldo = $prevHistoriProyek->saldo;
+                    $historiUnit->saldo = $prevHistoriUnit->saldo;
                 }
-                $historiProyek->id_kegiatan = $idProyek;
-                $historiProyek->bulan = (int)$bulan;
-                $historiProyek->tahun = (int)$tahun;
+                $historiUnit->id_unit = $idUnit;
+                $historiUnit->bulan = (int)$bulan;
+                $historiUnit->tahun = (int)$tahun;
             }
-            $transaksiProyek->id_transaksi = $idTransaksi;
-            $transaksiProyek->id_kegiatan = $idProyek;
-            $transaksiProyek->tipe_nominal = $nominalType;
-            $transaksiProyek->status = 1;
-            if($transaksiProyek->save()){
+            $transaksiUnit->id_transaksi = $idTransaksi;
+            $transaksiUnit->id_unit = $idUnit;
+            $transaksiUnit->tipe_nominal = $nominalType;
+            $transaksiUnit->status = 1;
+            if($transaksiUnit->save()){
                 if($nominalType == 'd'){
-                    $proyek->saldo += $nominal;
-                    $historiProyek->saldo += $nominal;
-                    if(isset($nextHistoriProyek)){
-                        foreach($nextHistoriProyek as $NHP){
+                    $Unit->saldo += $nominal;
+                    $historiUnit->saldo += $nominal;
+                    if(isset($nextHistoriUnit)){
+                        foreach($nextHistoriUnit as $NHP){
                             $NHP->saldo += $nominal;
                             $NHP->save();
                         }
                     }
                 }
                 elseif($nominalType == 'k'){
-                    $proyek->saldo -= $nominal;
-                    $historiProyek->saldo -= $nominal;
-                    if(isset($nextHistoriProyek)){
-                        foreach($nextHistoriProyek as $NHP){
+                    $Unit->saldo -= $nominal;
+                    $historiUnit->saldo -= $nominal;
+                    if(isset($nextHistoriUnit)){
+                        foreach($nextHistoriUnit as $NHP){
                             $NHP->saldo -= $nominal;
                             $NHP->save();
                         }
                     }
                 }
-                if($proyek->save()){
-                    if($historiProyek->save()){
+                if($Unit->save()){
+                    if($historiUnit->save()){
                         return true;
                     }
                     else{
@@ -146,38 +150,34 @@ class TransaksiProyekController extends Controller
         }
     }
 
-    public function editTransProyek(TransaksiProyek $transProyek, $nominal){
-        
-    }
-
-    /* Mengurangi saldo proyek, mengurangi saldo proyek perbulan, dan menghapus transaksiProyek */
-    public function deleteTransProyek(TransaksiProyek $transProyek, $nominal,$tanggal){
-        Log::info('delete trans proyek route');
+    /* Mengurangi saldo Unit, mengurangi saldo Unit perbulan, dan menghapus transaksiUnit */
+    public function deleteTransUnit(TransaksiUnit $transUnit, $nominal,$tanggal){
+        Log::info('delete trans Unit route');
         $time  = strtotime($tanggal);
         $bulan = date('n',$time);
         $tahun  = date('Y',$time);
-        $proyek = Proyek::find($transProyek->id_kegiatan);
-        $historiSaldoProyek = HistoriSaldoProyekPerbulan::where('id_kegiatan',$transProyek->id_kegiatan)->where(function($first) use ($tahun,$bulan)
+        $Unit = Unit::find($transUnit->id_unit);
+        $historiSaldoUnit = HistoriSaldoUnitPerbulan::where('id_unit',$transUnit->id_unit)->where(function($first) use ($tahun,$bulan)
                                         {
                                             $first->where(function($second) use ($tahun,$bulan){
                                                 $second->where('tahun',(int)$tahun)->where('bulan','>=',(int)$bulan);
                                             })->orWhere('tahun','>',(int)$tahun);
                                         })->orderBy('tahun','asc')->orderBy('bulan','asc')->get();
-        foreach($historiSaldoProyek as $histProRow){
-            if($transProyek->tipe_nominal == 'k'){
+        foreach($historiSaldoUnit as $histProRow){
+            if($transUnit->tipe_nominal == 'k'){
                 $histProRow->saldo += $nominal;
             }else{
                 $histProRow->saldo -= $nominal;
             }
             $histProRow->save();
         }
-        if($transProyek->tipe_nominal == 'k'){
-            $proyek->saldo += $nominal;
+        if($transUnit->tipe_nominal == 'k'){
+            $Unit->saldo += $nominal;
         }else{
-            $proyek->saldo -= $nominal;
+            $Unit->saldo -= $nominal;
         }
-        if($proyek->save()){
-            $deleted = TransaksiProyek::destroy($transProyek->id);
+        if($Unit->save()){
+            $deleted = TransaksiUnit::destroy($transUnit->id);
         }
     }
 
@@ -189,10 +189,10 @@ class TransaksiProyekController extends Controller
             $bulan = date('n',$time);
             $tahun  = date('Y',$time);
             $idCash = 1;
-            $transaksiProyek = TransaksiProyek::where('id_transaksi',$request->idTransaksi)->first();
-            $proyek = Proyek::findOrFail($transaksiProyek->id_kegiatan);
-            /* ambil semua histori saldo proyek perbulan pada tanggal $transaksi dan setelahnya */
-            $historiProyek = HistoriSaldoProyekPerbulan::where('id_kegiatan',$transaksiProyek->id_kegiatan)
+            $transaksiUnit = TransaksiUnit::where('id_transaksi',$request->idTransaksi)->first();
+            $Unit = Unit::findOrFail($transaksiUnit->id_unit);
+            /* ambil semua histori saldo Unit perbulan pada tanggal $transaksi dan setelahnya */
+            $historiUnit = HistoriSaldoUnitPerbulan::where('id_unit',$transaksiUnit->id_unit)
                              ->where(function($first) use ($tahun,$bulan){
                                 $first->where(function($second) use ($tahun,$bulan){
                                     $second->where('tahun',(int)$tahun)->where('bulan','>=',(int)$bulan);
@@ -203,21 +203,21 @@ class TransaksiProyekController extends Controller
             $transaksi->keterangan = $request->keterangan;
             if($transaksi->save()){
                 /* ganti tipe_nominal sesuai input dan status 1*/
-                $transaksiProyek->tipe_nominal = $request->nominalType;
-                $transaksiProyek->status = 1;
-                $transaksiProyek->save();
-                /* jumlahin saldo di bulan $transaksi pada proyek */
-                if($transaksiProyek->tipe_nominal == 'k'){
-                    $proyek->saldo += $transaksi->nominal;
+                $transaksiUnit->tipe_nominal = $request->nominalType;
+                $transaksiUnit->status = 1;
+                $transaksiUnit->save();
+                /* jumlahin saldo di bulan $transaksi pada Unit */
+                if($transaksiUnit->tipe_nominal == 'k'){
+                    $Unit->saldo += $transaksi->nominal;
                 }else{
-                    $proyek->saldo -= $transaksi->nominal;
+                    $Unit->saldo -= $transaksi->nominal;
                 }
-                $proyek->save();
-                if($historiProyek->isEmpty()){
-                    /* jumlahin saldo di bulan $transaksi pada histori proyek */
-                    foreach($historiProyek as $hisRow){
-                        $hisRow->id_kegiatan = $proyek->id;
-                        if($transaksiProyek->tipe_nominal == 'k'){
+                $Unit->save();
+                if($historiUnit->isEmpty()){
+                    /* jumlahin saldo di bulan $transaksi pada histori Unit */
+                    foreach($historiUnit as $hisRow){
+                        $hisRow->id_unit = $Unit->id;
+                        if($transaksiUnit->tipe_nominal == 'k'){
                             $hisRow->saldo += $transaksi->nominal;
                         }else{
                             $hisRow->saldo -= $transaksi->nominal;
@@ -226,29 +226,29 @@ class TransaksiProyekController extends Controller
                     }
                 }else{
                     /* buat record baru kalo ga ada histori */
-                    $prevHistoriProyek = HistoriSaldoProyekPerbulan::where('id_kegiatan',$transaksiProyek->id_kegiatan)->where(function($first) use ($tahun,$bulan)
+                    $prevHistoriUnit = HistoriSaldoUnitPerbulan::where('id_unit',$transaksiUnit->id_unit)->where(function($first) use ($tahun,$bulan)
                                         {
                                             $first->where(function($second) use ($tahun,$bulan){
                                                 $second->where('tahun',(int)$tahun)->where('bulan','<',(int)$bulan);
                                             })->orWhere('tahun','<',(int)$tahun);
                                         })->orderBy('tahun','desc')->orderBy('bulan','desc')->first();
-                    $historiProyek = new HistoriSaldoProyekPerbulan;
-                    $historiProyek->id_kegiatan = $proyek->id;
-                    $historiProyek->tahun = $tahun;
-                    $historiProyek->bulan = $bulan;
-                    if($prevHistoriProyek == null){
+                    $historiUnit = new HistoriSaldoUnitPerbulan;
+                    $historiUnit->id_unit = $Unit->id;
+                    $historiUnit->tahun = $tahun;
+                    $historiUnit->bulan = $bulan;
+                    if($prevHistoriUnit == null){
                         /* tidak ada histori sama sekali */
-                        $historiProyek->saldo = $proyek->saldo;
+                        $historiUnit->saldo = $Unit->saldo;
                     }else{
                         /* tidak ada histori sekarang dan setelahnya tapi ada histori sebelumnya */
-                        $historiProyek->saldo = $prevHistoriProyek->saldo;
-                        if($transaksiProyek->tipe_nominal == 'k'){
-                            $historiProyek->saldo += $transaksi->nominal;
+                        $historiUnit->saldo = $prevHistoriUnit->saldo;
+                        if($transaksiUnit->tipe_nominal == 'k'){
+                            $historiUnit->saldo += $transaksi->nominal;
                         }else{
-                            $historiProyek->saldo -= $transaksi->nominal;
+                            $historiUnit->saldo -= $transaksi->nominal;
                         }
                     }
-                    $historiProyek->save();
+                    $historiUnit->save();
                 }   
                 $transBankControl = new TransaksiBankController;
                 if(isset($request->idSimpanan)){
@@ -273,26 +273,21 @@ class TransaksiProyekController extends Controller
             Log::info($err);
         }
     }
-    public function reverseNominalType($nominalType){
-        if($nominalType == 'd'){
-            return 'k';
-        }
-        else return 'd';
-    }
-    // return semua pengajuan penggunaan dana proyek
-    public function getAllPengajuanDanaProyek(Request $request){
+
+    // return semua pengajuan penggunaan dana Unit
+    public function getAllPengajuanDanaUnit(Request $request){
         try{
             $data = [];
             $dataindex = 0;
-            if($request->has('idProyek')){
-                $transaksi = Transaksi::whereHas('transaksiProyek',function($query) use ($request){
-                                            $query->where('id_kegiatan',$request->idProyek);
-                                        })->with(['transaksiProyek'=>function($query) use ($request){
-                                            $query->with(['proyek'])->where('id_kegiatan',$request->idProyek);
+            if($request->has('idUnit')){
+                $transaksi = Transaksi::whereHas('transaksiUnit',function($query) use ($request){
+                                            $query->where('id_unit',$request->idUnit);
+                                        })->with(['transaksiUnit'=>function($query) use ($request){
+                                            $query->with(['Unit'])->where('id_unit',$request->idUnit);
                                         }])->with(['pegawai'])->where('status',3)->orderBy('tanggal','desc')->get();
             }else{
-                $transaksi = Transaksi::whereHas('transaksiProyek')->with(['transaksiProyek'=>function($query) use ($request){
-                                            $query->with(['proyek']);
+                $transaksi = Transaksi::whereHas('transaksiUnit')->with(['transaksiUnit'=>function($query) use ($request){
+                                            $query->with(['Unit']);
                                         }])->with(['pegawai'])->where('status',3)->orderBy('tanggal','desc')->get();
             }
             if(!$transaksi->isEmpty()){
@@ -301,10 +296,10 @@ class TransaksiProyekController extends Controller
                         'id'=> $transRow->id,
                         'tanggal'=> $transRow->tanggal,
                         'pegawai'=> $transRow->pegawai->nama,
-                        'keterangan'=> $transRow->transaksiProyek[0]->keterangan.' '.$transRow->transaksiProyek[0]->jumlah
-                                       .' '.$transRow->transaksiProyek[0]->unit.' x '.$transRow->transaksiProyek[0]->perkiraan_biaya,
+                        'keterangan'=> $transRow->transaksiUnit[0]->keterangan.' '.$transRow->transaksiUnit[0]->jumlah
+                                       .' '.$transRow->transaksiUnit[0]->unit.' x '.$transRow->transaksiUnit[0]->perkiraan_biaya,
                         'nominal'=> $transRow->nominal,
-                        'kategori'=> $transRow->transaksiProyek[0]->proyek->nama_kegiatan,
+                        'kategori'=> $transRow->transaksiUnit[0]->Unit->nama,
                         'edit_able'=> true,
                         'delete_able'=> true,
                     ];
@@ -319,35 +314,35 @@ class TransaksiProyekController extends Controller
         }
     }
 
-    public function getAllTransaksiProyek(Request $request){
+    public function getAllTransaksiUnit(Request $request){
         try{
             $data = [];
             $dataindex = 0;
             $bulan = '';
             $saldo = 0;
-            $transaksi = Transaksi::whereHas('transaksiProyek',function($query) use ($request){
-                                        $query->where('id_kegiatan',$request->idProyek);
-                                    })->with(['transaksiProyek'=>function($query) use ($request){
-                                        $query->with(['proyek'])->where('id_kegiatan',$request->idProyek);
+            $transaksi = Transaksi::whereHas('transaksiUnit',function($query) use ($request){
+                                        $query->where('id_unit',$request->idUnit);
+                                    })->with(['transaksiUnit'=>function($query) use ($request){
+                                        $query->with(['Unit'])->where('id_unit',$request->idUnit);
                                     }])->with(['pegawai'])->whereYear('tanggal',$request->tahun)
                                     ->where('status',1)->orderBy('tanggal','desc')->get();
-            $historiSimpanan = HistoriSaldoProyekPerbulan::where('id_kegiatan',$request->idProyek)
+            $historiSimpanan = HistoriSaldoUnitPerbulan::where('id_unit',$request->idUnit)
                                 ->where('tahun',(int)$request->tahun)
                                 ->get();
             if(!$transaksi->isEmpty()){
-                foreach($transaksi as $transProyekRow){
-                    $time  = strtotime($transProyekRow->tanggal);
+                foreach($transaksi as $transUnitRow){
+                    $time  = strtotime($transUnitRow->tanggal);
                     if($bulan != date('n',$time)){
                         $firstRowinBulan = true;
                         $bulan = date('n',$time);
                         //ambil histori saldo pada $bulan dari tanggal transaksi
-                        $historiProyekBulan = $historiSimpanan->where('bulan',(int)$bulan)->first();
+                        $historiUnitBulan = $historiSimpanan->where('bulan',(int)$bulan)->first();
                         // disimpan di saldo
-                        $saldo = $historiProyekBulan->saldo;
+                        $saldo = $historiUnitBulan->saldo;
                     }
                     if(!$firstRowinBulan){
                         //kalo kredit saldo ditambah, debit saldo dikurang
-                        if($transaksi[$dataindex-1]->transaksiProyek[0]->tipe_nominal == 'k'){
+                        if($transaksi[$dataindex-1]->transaksiUnit[0]->tipe_nominal == 'k'){
                             $saldo += $transaksi[$dataindex-1]->nominal;
                         }else{
                             $saldo -= $transaksi[$dataindex-1]->nominal;
@@ -355,22 +350,22 @@ class TransaksiProyekController extends Controller
                     }
                     $firstRowinBulan = false;
                     $data[$dataindex] = [
-                        'id_transaksi'=>$transProyekRow->id,
+                        'id_transaksi'=>$transUnitRow->id,
                         'jenis_transaksi'=> 3,
-                        'id' => $transProyekRow->transaksiProyek[0]->id,
-                        'tanggal'=> $transProyekRow->tanggal,
-                        'pegawai'=> $transProyekRow->pegawai->nama,
-                        'keterangan'=> $transProyekRow->keterangan,
-                        'nominal_type'=> $transProyekRow->transaksiProyek[0]->tipe_nominal,
-                        'nominal'=> $transProyekRow->nominal,
+                        'id' => $transUnitRow->transaksiUnit[0]->id,
+                        'tanggal'=> $transUnitRow->tanggal,
+                        'pegawai'=> $transUnitRow->pegawai->nama,
+                        'keterangan'=> $transUnitRow->keterangan,
+                        'nominal_type'=> $transUnitRow->transaksiUnit[0]->tipe_nominal,
+                        'nominal'=> $transUnitRow->nominal,
                         'saldo'=> $saldo,
-                        'kategori'=> $transProyekRow->transaksiProyek[0]->proyek->nama_kegiatan,
+                        'kategori'=> $transUnitRow->transaksiUnit[0]->Unit->nama,
                         'edit_able'=> true,
                         'delete_able'=> true
                     ];
                     $dataindex++;
                 }
-                if($transaksi[$dataindex-1]->transaksiProyek[0]->tipe_nominal == 'k'){
+                if($transaksi[$dataindex-1]->transaksiUnit[0]->tipe_nominal == 'k'){
                     $saldo += $transaksi[$dataindex-1]->nominal;
                 }else{
                     $saldo -= $transaksi[$dataindex-1]->nominal;
@@ -399,16 +394,16 @@ class TransaksiProyekController extends Controller
         }
     }
 
-    public function generateExcelProyek(Request $request){
+    public function generateExcelUnit(Request $request){
         try{
-            $data = $this->getAllTransaksiProyek($request);
+            $data = $this->getAllTransaksiUnit($request);
             if($data['empty'] == false){
                 $transaksiController = new TransaksiController;
                 $array = $transaksiController->cvtArray($data['data']);
-                $proyek = Proyek::find($request->idProyek);
+                $Unit = Unit::find($request->idUnit);
                 $sheetname = $request->tahun;
-                $filename = 'Laporan Keuangan Proyek '.$proyek->nama_kegiatan.' '.$request->tahun;
-                $title = 'Laporan Keuangan '.$proyek->nama_kegiatan;
+                $filename = 'Laporan Keuangan Unit '.$Unit->nama.' '.$request->tahun;
+                $title = 'Laporan Keuangan '.$Unit->nama;
                 $transaksiController->createExcel($array['array'],$filename,$sheetname,$title,$array['width']);
                 $transaksiController->xlsToXlsx(storage_path('exports/'.$filename.'.xls'),$filename);
                 return ['status'=>true];
@@ -420,14 +415,13 @@ class TransaksiProyekController extends Controller
         }
     }
 
-    public function downloadExcelProyek(Request $request){
-        $proyek = Proyek::find($request->idProyek);
+    public function downloadExcelUnit(Request $request){
+        $Unit = Unit::find($request->idUnit);
         $sheetname = $request->tahun;
-        $filename = 'Laporan Keuangan Proyek '.$proyek->nama_kegiatan.' '.$request->tahun;
+        $filename = 'Laporan Keuangan Unit '.$Unit->nama.' '.$request->tahun;
         $fileContents = Storage::disk('export')->get($filename.'.xlsx');
         $response = Response::make($fileContents, 200);
         $response->header('Content-Type', MimeType::get('xlsx'));
         return $response;
     }
-
 }

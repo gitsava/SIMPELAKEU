@@ -14,6 +14,7 @@ const SettingsPassword = () => import('~/pages/settings/password').then(m => m.d
 //Transaksi routes
 const Transaksiumum = () => import('~/pages/transaksi/umum/index').then(m => m.default || m)
 const Transaksibank = () => import('~/pages/transaksi/bank/index').then(m => m.default || m)
+const Transaksiunit = () => import('~/pages/transaksi/unit/index').then(m => m.default || m)
 
 const Transaksi = () => import('~/pages/transaksi/index').then(m => m.default || m)
 
@@ -29,6 +30,8 @@ const Pengajuan = () => import('~/pages/pengajuan/index').then(m => m.default ||
 
 const Proyek = () => import('~/pages/proyek/index').then(m => m.default || m)
 
+const Unit = () => import('~/pages/unit/index').then(m => m.default || m)
+
 const Rekap = () => import('~/pages/rekap/index').then(m => m.default || m)
 
 export default [
@@ -38,6 +41,7 @@ export default [
   { path: '/admin', name: 'admin', component: Admin },
   { path: '/riwayat/transaksi-umum', name: 'transaksiumum', component: Transaksiumum },
   { path: '/riwayat/transaksi-bank', name: 'transaksibank', component: Transaksibank },
+  { path: '/riwayat/transaksi-unit', name: 'transaksiunit', component: Transaksiunit },
   { path: '/transaksi', name: 'transaksi', component: Transaksi },
   { path: '/pengajuan-penggunaan-dana', name: 'pengajuan', component: Pengajuan },
   { path: '/kategori-transaksi', name: 'kategori', component: Kategori },
@@ -47,6 +51,7 @@ export default [
   { path: '/password/reset', name: 'password.request', component: PasswordEmail },
   { path: '/password/reset/:token', name: 'password.reset', component: PasswordReset },
   { path: '/proyek', name: 'proyek', component: Proyek },
+  { path: '/unit', name: 'unit', component: Unit },
   { path:'/rekap', name:'rekap', component: Rekap },
   { path: '/home', name: 'home', component: Home },
   { path: '/settings',
@@ -57,5 +62,5 @@ export default [
       { path: 'password', name: 'settings.password', component: SettingsPassword }
     ] },
 
-  { path: '*', component: NotFound }
+  { path: '*',name: 'not-found', component: NotFound }
 ]

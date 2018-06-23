@@ -186,10 +186,20 @@
             },
             downloadExcel(){
                 var url = "/api/downloadexcel/laporantahunanproyek?tahun="+this.tahun+"&idProyek="+this.proyek['value']
-                var result = document.createElement('a'); 
+                let urlGenerate = '/api/generateexcel/laporantahunanproyek?tahun='+this.tahun+"&idProyek="+this.proyek['value']
+                this.$parent.showGenerate()
+                fetch(urlGenerate)
+                  .then(res => res.json())
+                  .then(res => {
+                    if(res.status == true){
+                      var result = document.createElement('a'); 
                       result.href = url;
                       result.download = 'Laporan Keuangan '+this.proyek['label']+' '+this.tahun+'.xlsx';
                       result.click();
+                      this.$parent.hideGenerate()
+                    }
+                  })
+                  .catch(err => console.log(err));
             },
             maybeLoadProyek(){
                 return this.proyekOptions.length <= 0 ? this.populateProyekOptions() : null

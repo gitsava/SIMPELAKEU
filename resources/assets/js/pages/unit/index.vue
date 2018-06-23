@@ -4,7 +4,7 @@
             <div class="col-md-12">
                 <div class="box box-info">
                     <div class="box-header with-border">
-                        <h3 class="box-title">Daftar Proyek</h3>
+                        <h3 class="box-title">Daftar Unit</h3>
                     </div>
                     <!-- /.box-header -->
                     <div v-if="isloading" class="overlay">
@@ -17,7 +17,7 @@
                                     <div class="input-group">
                                         <span class="input-group-addon"><i class="fa fa-search"></i></span>
                                         <input type="text" class="form-control" v-model="searchKey" placeholder="Cari disini...">
-                                        <span class="input-group-btn"><v-button :type="success" :loading="isloading" :method="searchProyek">Cari</v-button></span>
+                                        <span class="input-group-btn"><v-button :type="success" :loading="isloading" :method="searchunit">Cari</v-button></span>
                                     </div>
                                 </div>
                             </div>
@@ -29,16 +29,16 @@
                                         <thead>
                                         <tr>
                                         <th>No</th>
-                                        <th>Nama Proyek</th>
+                                        <th>Nama Unit</th>
                                         <th>Saldo</th>
                                         </tr>
                                         </thead>
                                         <tbody>
-                                            <template v-if="!empty" v-for="(proyek, i) in proyekList">
+                                            <template v-if="!empty" v-for="(unit, i) in unitList">
                                                 <tr>
                                                     <td>{{ (10*(meta.current_page-1))+i+1 }}</td>
-                                                    <td style="width:700px">{{ proyek.nama_proyek }}</td>
-                                                    <td>{{ proyek.saldo }}</td>
+                                                    <td style="width:700px">{{ unit.nama }}</td>
+                                                    <td>{{ unit.saldo }}</td>
                                                 </tr>
                                             </template>
                                         </tbody>
@@ -53,7 +53,7 @@
                     <div class="box-footer clearfix">
                         <ul v-if="!empty" class="pagination pagination-sm no-margin">
                             <li :class="{'disabled': prevDisabled}" style="cursor:pointer" @click="changePage(links.prev)"><a>«</a></li>
-                            <li :class="{'disabled': page == meta.current_page-1}" style="cursor:pointer" v-for="page in pages" @click="changePage('/api/transaksiproyek/getallproyeklist?page='+(page+1),true)"><a>{{ page+1 }}</a></li>
+                            <li :class="{'disabled': page == meta.current_page-1}" style="cursor:pointer" v-for="page in pages" @click="changePage('/api/transaksiunit/getallunitlist?page='+(page+1),true)"><a>{{ page+1 }}</a></li>
                             <li :class="{'disabled': nextDisabled}" style="cursor:pointer" :disabled="meta.current_page == meta.last_page" @click="changePage(links.next)"><a>»</a></li>
                         </ul>
                     </div>
@@ -68,12 +68,13 @@
     import Cookies from 'js-cookie'
     export default {
         layout: 'default',
+        middleware: 'bendahara',
         props: {
         },
         data: () => ({
             success : 'success',
             searchKey: null,
-            proyekList: [],
+            unitList: [],
             pages : {},
             isloading: false,
             empty: true,
@@ -85,8 +86,8 @@
             hidden: true
         }),
         created(){
-            this.getAllProyekList()
-            Cookies.set('p', 4, { expires: null })
+            this.getAllunitList()
+            Cookies.set('p', 5, { expires: null })
         },
         methods: {
            loadData: function(loadStatus){
@@ -99,26 +100,26 @@
                     link = link +'&key='+ this.searchKey
                 }
                }
-               this.getAllProyekList(link)
+               this.getAllunitList(link)
            },
-           searchProyek(){
-               let url = '/api/transaksiproyek/getallproyeklist?key=' + this.searchKey
-               this.getAllProyekList(url)
+           searchunit(){
+               let url = '/api/transaksiunit/getallunitlist?key=' + this.searchKey
+               this.getAllunitList(url)
            },
-           getAllProyekList(pageLink){
+           getAllunitList(pageLink){
                 this.isloading = true;
-                let url = pageLink || '/api/transaksiproyek/getallproyeklist'
+                let url = pageLink || '/api/transaksiunit/getallunitlist'
                 fetch(url)
                   .then(res => res.json())
                   .then(res => {
                     console.log(res)
                     this.empty = res.empty
                     if(this.empty){
-                        this.proyekList = []
+                        this.unitList = []
                     }
                     else{
                         let data = res.data;
-                        this.proyekList = data; 
+                        this.unitList = data; 
                         this.links = res.links;
                         this.meta = res.meta;
                         this.pages = Array.from({length: this.meta.last_page}, (v, i) => i)

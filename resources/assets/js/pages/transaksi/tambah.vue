@@ -15,6 +15,7 @@
                                     <option value="1">Transaksi Umum</option>
                                     <option value="2">Transaksi Bank</option>
                                     <option value="3">Transaksi Proyek</option>
+                                    <option value="4">Transaksi Unit</option>
                                 </select>
                             </div>
                         </div>
@@ -104,6 +105,7 @@
                 idSimpanan: null,
                 idTransaksi: null,
                 idProyek: null,
+                idUnit: null,
                 isKategoriChanged: false,
                 isNominalChanged: false,
                 isInvolvedBank: false
@@ -134,6 +136,8 @@
                 this.form.idKategori=null;
                 this.form.keterangan= null;
                 this.form.idSimpanan= null;
+                this.form.idUnit= null;
+                this.form.idProyek= null;
                 this.form.isInvolvedBank= false;
             },
             changeSelectedKategori(){
@@ -143,6 +147,8 @@
                    this.form.idSimpanan = this.idKat
                }else if(this.jenisTransaksi==3){
                    this.form.idProyek = this.idKat
+               }else if(this.jenisTransaksi==4){
+                   this.form.idUnit = this.idKat
                }
             },
             storeTransaksi(){
@@ -220,6 +226,11 @@
                         var dt = Date.now();
                         url = '/api/transaksiproyek/getallproyeklist?tanggal='+dt;
                         name = 'nama_proyek';
+                        break;
+                    case 4:
+                        var dt = Date.now();
+                        url = '/api/transaksiunit/getallunitlist';
+                        name = 'nama';
                         break;
                     default: 
                         url = '';

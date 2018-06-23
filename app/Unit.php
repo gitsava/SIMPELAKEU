@@ -13,8 +13,8 @@ class Unit extends Model
         'nama',
     ];
 
-    public function transaksi()
+    public function transaksiUnit()
     {
-        return $this->hasMay('App\Pegawai','foreign_key','id_unit');
+        return $this->hasMay('App\TransaksiUnit','id_unit');
     }
 }
