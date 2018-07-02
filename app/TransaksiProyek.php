@@ -22,4 +22,5 @@ class TransaksiProyek extends Model
     {
         return $this->belongsTo('App\Proyek','id_kegiatan');
     }
+	
 }

@@ -24,4 +24,9 @@ class Proyek extends Model
     {
         return $this->belongsTo('App\Proyek','id_tipe_kegiatan');
     }
+	
+	public function peserta()
+    {
+        return $this->hasMany('App\PesertaKegiatan','id_kegiatan');
+    }
 }

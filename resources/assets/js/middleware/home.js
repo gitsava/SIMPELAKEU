@@ -9,6 +9,6 @@ export default (to, from, next) => {
 	  }
 		
   } else {
-    next()
+    next({ name: 'login' })
   }
 }

@@ -12,6 +12,7 @@ use App\Transaksi;
 use App\Proyek;
 use App\KategoriUmum;
 use App\Simpanan;
+use App\Unit;
 use App\Http\Controllers\TransaksiBankController;
 use App\Http\Controllers\TransaksiUmumController;
 use App\Http\Controllers\TransaksiProyekController;

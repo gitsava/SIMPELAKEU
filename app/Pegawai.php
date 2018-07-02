@@ -23,7 +23,12 @@ class Pegawai extends Model
 
     public function transaksi()
     {
-        return $this->hasMay('App\Transaksi','id_pegawai');
+        return $this->hasMany('App\Transaksi','id_pegawai');
+    }
+	
+	public function penelitipsb()
+    {
+        return $this->hasMany('App\PenelitiPSB','id_pegawai');
     }
 
 }

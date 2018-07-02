@@ -58,17 +58,18 @@ class LoginController extends Controller
         $where = ['id_user'=>$users->id,'id_si'=>3];
         $userRoleSI = tblUserSI::where($where)->get();
         $queries = \DB::getQueryLog();
-        Log::info(isset($userRoleSI));
+        Log::info($userRoleSI->isEmpty());
         //Log::info($userRoleSI);
-        if(isset($userRoleSI)==1){
+        if(!$userRoleSI->isEmpty()){
             return [
+                'status'=> true,
                 'token' => $token,
                 'token_type' => 'bearer',
                 'expires_in' => $expiration - time(),
             ];
         }else {
             $this->guard()->logout();
-            return ['error'=>'Login Failed! Akun ini tidak terdaftar di Sistem Informasi Keuangan'];
+            return $this->accountNotRegisteredResponse($request);
         }
         
     }
@@ -81,6 +82,8 @@ class LoginController extends Controller
      */
     public function logout(Request $request)
     {
+        Log::info('logged out');
+        Log::info($request->user());
         $this->guard()->logout();
     }
 }

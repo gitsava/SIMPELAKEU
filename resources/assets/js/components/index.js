@@ -7,6 +7,7 @@ import vSelect from 'vue-select'
 import { HasError, AlertError, AlertSuccess } from 'vform'
 import VueSweetalert2 from 'vue-sweetalert2'
 import JsonExcel from 'vue-json-excel'
+import Toasted from 'vue-toasted';
 
 // Components that are registered globaly.
 [
@@ -31,4 +32,5 @@ try {
 
 Vue.component('v-select', vSelect)
 Vue.use(VueSweetalert2)
+Vue.use(Toasted)
 Vue.component('downloadExcel', JsonExcel)

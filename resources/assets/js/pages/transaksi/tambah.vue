@@ -11,7 +11,7 @@
                         <div class="col-xs-12 col-md-6">
                             <div class="form-group">
                                 <label>Jenis Transaksi</label>
-                                <select class="form-control" v-model="jenisTransaksi" @change="changeJenisTransaksi()">
+                                <select class="form-control" v-model="jenisTransaksi" @change="changeJenisTransaksi()" required>
                                     <option value="1">Transaksi Umum</option>
                                     <option value="2">Transaksi Bank</option>
                                     <option value="3">Transaksi Proyek</option>
@@ -22,6 +22,7 @@
                         <div class="col-xs-12 col-md-6">
                             <div class="form-group">
                                 <label>Kategori</label>
+								<input type="text" class="validation" v-model="idKat" required/>
                                 <v-select ref="select2" :disabled="kategoriDisabled" v-model="idKat" :onChange="changeSelectedKategori()" :options="kategoriOptions" :settings="kategoriSetting" @search:focus="maybeLoadKategori"/>
                             </div>
                         </div>
@@ -30,12 +31,14 @@
                         <div class="col-xs-12 col-md-6">
                             <div class="form-group">
                                 <label>PIC</label>
+								<input type="text" class="validation" v-model="form.idPegawai" required/>
                                 <v-select v-model="form.idPegawai" :options="picOptions" :settings="picSetting" @search:focus="maybeLoadPIC"/>
                             </div>
                         </div>
                         <div class="col-xs-12 col-md-6">
                             <div class="form-group">
                                 <label>Tanggal</label>
+								<input type="text" class="validation" v-model="form.tanggal" required/>
                                 <Datepicker v-model="form.tanggal" :format="'dd/MM/yyyy'" :input-class="'form-control'"/>
                             </div>
                         </div>
@@ -44,7 +47,7 @@
                         <div class="col-xs-12 col-md-3">
                             <div class="form-group">
                                 <label>Tipe Nominal</label>
-                                <select class="form-control" v-model="form.nominalType">
+                                <select class="form-control" v-model="form.nominalType" required>
                                     <option value="d">Debit</option>
                                     <option value="k">Kredit</option>
                                 </select>
@@ -55,7 +58,7 @@
                                 <label>Nominal</label>
                                 <div class="input-group">
                                     <span class="input-group-addon">Rp</span>
-                                    <input v-model="form.nominal" type="number" min="0" class="form-control">
+                                    <input v-model="form.nominal" type="number" min="0" class="form-control" required>
                                     <span class="input-group-addon">,00</span>
                                 </div>
                             </div>
@@ -139,6 +142,7 @@
                 this.form.idUnit= null;
                 this.form.idProyek= null;
                 this.form.isInvolvedBank= false;
+				this.idKat = null;
             },
             changeSelectedKategori(){
                if(this.jenisTransaksi==1){
@@ -272,5 +276,15 @@
 }
 .v-select input {
     width: 1px !important;
+}
+.validation {
+  position: absolute;
+  width: calc(100% - 1px); height: calc(100% - 1px);
+  border: none;
+  border-radius: 5px;
+  background: none;
+  left: 0%; bottom: 0;
+  z-index: -1;
+  opacity: 0;
 }
 </style>

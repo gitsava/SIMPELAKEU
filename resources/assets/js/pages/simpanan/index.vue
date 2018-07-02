@@ -33,7 +33,7 @@
             </div>
             <!-- /.modal -->
         </div>
-        <div v-if="empty" style="margin-bottom:300px"></div>
+        <div v-if="empty || simpananList.length<=3" style="margin-bottom:300px"></div>
     </section>
     <!-- /.box -->
 </template>

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -16,10 +17,13 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::post('logout', 'Auth\LoginController@logout');
 
     Route::get('/user', function (Request $request) {
-        return $request->user()->with(['userRoleSI'=>
+        Log::info('req user');
+        $user = $request->user()->with(['userRoleSI'=>
                 function($query){
                     $query->with(['userRole'])->where('id_si',3);
-                }])->first();
+                }])->where('id',$request->user()->id)->first(); 
+        Log::info($user);
+        return $user;
     });
     Route::post('transaksi/store','TransaksiController@storeTransaksi');
     Route::get('downloadexcel/laporantahunan','TransaksiController@downloadLaporan');
@@ -64,6 +68,7 @@ Route::group(['middleware' => 'guest:api'], function () {
     Route::get('transaksibank/getallsimpananlist','TransaksiBankController@getAllSimpananList');
     Route::get('transaksibank/getallsimpananlistnoncash','TransaksiBankController@getAllSimpananListNonCash');
     Route::get('transaksiproyek/getallproyeklist','TransaksiProyekController@getAllProyekList');
+	Route::get('transaksiproyek/getallpeneliti','TransaksiProyekController@getAllPeneliti');
     Route::post('oauth/{driver}', 'Auth\OAuthController@redirectToProvider');
     Route::get('oauth/{driver}/callback', 'Auth\OAuthController@handleProviderCallback')->name('oauth.callback');
     Route::get('pengajuandanaproyek/fetch','TransaksiProyekController@getAllPengajuanDanaProyek');
@@ -73,6 +78,7 @@ Route::group(['middleware' => 'guest:api'], function () {
     Route::get('generateexcel/laporantahunanunit','TransaksiUnitController@generateExcelUnit');
     Route::get('generateexcel/laporantahunanumum','TransaksiUmumController@generateExcelUmum');
     Route::get('generateexcel/laporantahunanproyek','TransaksiProyekController@generateExcelProyek');
+	Route::get('historisimpanan/fetch','DashboardController@getHistoriSimpanan');
 });
 
 

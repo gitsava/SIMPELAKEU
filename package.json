@@ -20,6 +20,7 @@
     "axios": "^0.18.0",
     "bootstrap": "^4.0.0",
     "bootstrap-sass": "^3.3.7",
+    "chart.js": "^2.7.2",
     "font-awesome": "^4.7.0",
     "jquery": "^3.3.1",
     "js-cookie": "^2.2.0",
@@ -28,6 +29,7 @@
     "v-select2-component": "^0.2.0",
     "vform": "^1.0.0",
     "vue": "^2.5.16",
+    "vue-chartjs": "^3.3.2",
     "vue-date-picker": "^1.0.2",
     "vue-i18n": "^7.6.0",
     "vue-json-excel": "^0.2.5",
@@ -38,6 +40,7 @@
     "vue-select2": "^0.2.6",
     "vue-simple-datepicker": "^1.1.0",
     "vue-sweetalert2": "^1.2.4",
+    "vue-toasted": "^1.1.24",
     "vuejs-datepicker": "^0.9.29",
     "vuex": "^3.0.1",
     "vuex-router-sync": "^5.0.0",
@@ -53,4 +56,5 @@
     "laravel-mix": "^2.1.11",
     "vue-template-compiler": "^2.5.16",
     "webpack-bundle-analyzer": "^2.11.2"
-  }}
+  }
+}

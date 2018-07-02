@@ -15,11 +15,11 @@ class Simpanan extends Model
 
     public function transaksiBank()
     {
-        return $this->hasMay('App\TransaksiBank','id_bank');
+        return $this->hasMany('App\TransaksiBank','id_bank');
     }
 
     public function historiSaldo()
     {
-        return $this->hasMay('App\HistoriSaldoSimpananPerbulan','id_bank');
+        return $this->hasMany('App\HistoriSaldoSimpananPerbulan','id_bank');
     }
 }

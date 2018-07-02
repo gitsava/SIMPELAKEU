@@ -16,13 +16,13 @@
           <ul class="nav">
             <li class="col-md-12">
               <div class="form-group">
-                <input v-model="form.email" :class="{ 'is-invalid': form.errors.has('email') }" :placeholder="$t('email')" class="form-control" type="email" name="email">
+                <input v-model="form.email" :class="{ 'is-invalid': form.errors.has('email') }" :placeholder="$t('email')" class="form-control" type="email" name="email" required>
                 <has-error :form="form" field="email"/>
               </div>
             </li>
             <li class="col-md-12">
               <div class="form-group">
-                <input v-model="form.password" :class="{ 'is-invalid': form.errors.has('password') }" :placeholder="$t('password')" class="form-control" type="password" name="password">
+                <input v-model="form.password" :class="{ 'is-invalid': form.errors.has('password') }" :placeholder="$t('password')" class="form-control" type="password" name="password" required>
                 <has-error :form="form" field="password"/>
               </div>
             </li>
@@ -73,6 +73,7 @@ export default {
     async login () {
       // Submit the form.
       const { data } = await this.form.post('/api/login')
+      console.log(typeof data.error)
       if(typeof data.error == "undefined"){
         // Save the token.
         this.$store.dispatch('auth/saveToken', {
@@ -83,8 +84,14 @@ export default {
         // Fetch the user.
         await this.$store.dispatch('auth/fetchUser')
         console.log(this.$store.getters['auth/user'])
-        // Redirect home.
-        this.$router.push({ name: 'transaksi' })        
+		this.$toasted.success('<i class="fa fa-check"></i>Logged in').goAway(1000)
+        if (this.$store.getters['auth/user']['user_role_s_i'][0].id_role === 8) {
+          // Redirect transaksi.
+          this.$router.push({ name: 'transaksi' })
+        }else if (this.$store.getters['auth/user']['user_role_s_i'][0].id_role === 3) {
+          // Redirect home.
+          this.$router.push({ name: 'dashboard' })
+        }
       }
       else{
         console.log(data)

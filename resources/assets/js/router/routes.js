@@ -34,6 +34,8 @@ const Unit = () => import('~/pages/unit/index').then(m => m.default || m)
 
 const Rekap = () => import('~/pages/rekap/index').then(m => m.default || m)
 
+const Dashboard = () => import('~/pages/dashboard/dashboard').then(m => m.default || m)
+
 export default [
   { path: '/', name: 'welcome', component: Welcome },
 
@@ -54,6 +56,7 @@ export default [
   { path: '/unit', name: 'unit', component: Unit },
   { path:'/rekap', name:'rekap', component: Rekap },
   { path: '/home', name: 'home', component: Home },
+  { path: '/dashboard', name: 'dashboard', component: Dashboard },
   { path: '/settings',
     component: Settings,
     children: [

@@ -11,7 +11,7 @@
                         <div class="col-xs-12 col-md-5">
                             <div class="form-group">
                                 <label>Nama Kategori</label>
-                                <input class="form-control" type="text" v-model="form.namaKategori" placeholder="Isikan nama kategori ...">
+                                <input class="form-control" type="text" v-model="form.namaKategori" placeholder="Isikan nama kategori ..." required>
                             </div>
                         </div>
                         <!--<div class="col-xs-12 col-md-5">

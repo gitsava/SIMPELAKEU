@@ -12,15 +12,27 @@
                     </div>
                     <div class="box-body">
                         <div class="row">
-                            <div class="col-xs-12 col-md-4">
+                            <div class="col-xs-12 col-md-6">
                                 <div class="form-group">
                                     <div class="input-group">
-                                        <span class="input-group-addon"><i class="fa fa-search"></i></span>
-                                        <input type="text" class="form-control" v-model="searchKey" placeholder="Cari disini...">
-                                        <span class="input-group-btn"><v-button :type="success" :loading="isloading" :method="searchProyek">Cari</v-button></span>
+                                        <span class="input-group-addon">Ketua Peneliti</span>
+                                        <v-select ref="select" v-model="peneliti" :options="options" @search:focus="loadOptions"/>
                                     </div>
                                 </div>
                             </div>
+							<div class="col-xs-12 col-md-2">
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <span class="input-group-addon">Tahun</span>
+                                        <input type="text" class="form-control" v-model="tahun" />
+                                    </div>
+                                </div>
+                            </div>
+							<div class="col-xs-12 col-md-1">
+								<div class="form-group">
+									<v-button :type="'primary'"  :method="searchProyek">Cari</v-button>
+								</div>
+							</div>
                         </div>
                         <div class="row">
                             <div class="col-xs-12 col-md-12">
@@ -29,6 +41,7 @@
                                         <thead>
                                         <tr>
                                         <th>No</th>
+										<th>Ketua Peneliti </th>
                                         <th>Nama Proyek</th>
                                         <th>Saldo</th>
                                         </tr>
@@ -37,7 +50,8 @@
                                             <template v-if="!empty" v-for="(proyek, i) in proyekList">
                                                 <tr>
                                                     <td>{{ (10*(meta.current_page-1))+i+1 }}</td>
-                                                    <td style="width:700px">{{ proyek.nama_proyek }}</td>
+													<td>{{ proyek.peneliti.penelitipsb[0].pegawai.nama }}</td>
+                                                    <td style="width:700px">{{ proyek.kegiatan.nama_kegiatan }}</td>
                                                     <td>{{ proyek.saldo }}</td>
                                                 </tr>
                                             </template>
@@ -72,7 +86,7 @@
         },
         data: () => ({
             success : 'success',
-            searchKey: null,
+            peneliti: null,
             proyekList: [],
             pages : {},
             isloading: false,
@@ -82,7 +96,9 @@
             currentPageDisabled: false,
             meta: {},
             links: {},
-            hidden: true
+            hidden: true,
+			options: [],
+			tahun: null
         }),
         created(){
             this.getAllProyekList()
@@ -93,16 +109,37 @@
             console.log(loadStatus)
             this.isloading = !loadStatus
            },
+		   loadOptions(){
+				return this.options.length <= 0 ? this.populateOptions() : null
+		   },
+		   populateOptions(){
+				let url = '/api/transaksiproyek/getallpeneliti';
+                let self = this
+                this.$refs.select.toggleLoading(true)
+                fetch(url)
+                  .then(res => res.json())
+                  .then(res => {
+                    let data = res.data;
+                    for(var i = 0; i < data.length; i++){
+                        self.options.push({
+                            label : data[i].pegawai.nama,
+                            value : data[i].id_peneliti
+                        })
+                    }
+                    this.$refs.select.toggleLoading(false)
+                  })
+                  .catch(err => console.log(err));
+		   },
            changePage(link,number=false){
                if(number){
-                if(this.searchKey!=null){
-                    link = link +'&key='+ this.searchKey
-                }
+					if(this.peneliti!=null){
+						link = link +'&idPeneliti='+ this.peneliti['value'] +'&tahun=' + this.tahun
+					}
                }
                this.getAllProyekList(link)
            },
            searchProyek(){
-               let url = '/api/transaksiproyek/getallproyeklist?key=' + this.searchKey
+               let url = '/api/transaksiproyek/getallproyeklist?idPeneliti=' + this.peneliti['value'] +'&tahun=' + this.tahun
                this.getAllProyekList(url)
            },
            getAllProyekList(pageLink){
@@ -118,13 +155,13 @@
                     }
                     else{
                         let data = res.data;
-                        this.proyekList = data; 
-                        this.links = res.links;
-                        this.meta = res.meta;
+                        this.proyekList = data.data; 
+                        this.links = data;
+                        this.meta = data;
                         this.pages = Array.from({length: this.meta.last_page}, (v, i) => i)
-                        if(res.meta.current_page == 1) this.prevPage = true
+                        if(this.meta.current_page == 1) this.prevPage = true
                         else this.prevPage = false
-                        if(res.meta.current_page == res.meta.last_page) this.nextPage = true
+                        if(this.meta.current_page == this.meta.last_page) this.nextPage = true
                         else this.nextPage = false
                     }
                     this.isloading = false

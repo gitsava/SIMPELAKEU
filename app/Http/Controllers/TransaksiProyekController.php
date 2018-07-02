@@ -11,6 +11,8 @@ use Illuminate\Http\Testing\MimeType;
 use App\Proyek;
 use App\Transaksi;
 use App\TransaksiProyek;
+use App\PenelitiPSB;
+use App\PesertaKegiatan;
 use App\HistoriSaldoProyekPerbulan;
 use App\Http\Controllers\TransaksiBankController;
 use App\Http\Resources\Proyek as ProyekResource;
@@ -22,23 +24,53 @@ class TransaksiProyekController extends Controller
         try{
             $path = 'logger.txt';
             Storage::disk('local')->append($path, 'Get All Proyek List Routes');
-            if($request->has('key')){
-                $key = $request->key;
-                $proyek = Proyek::where('nama_kegiatan','LIKE','%'.$key.'%')->paginate(10)->appends(Input::except('page'));
-                
-            }elseif($request->has('tanggal')){
-                $proyek = Proyek::where('tanggal_akhir','>=',Date('Y-m-d',strtotime($request->tanggal)))->get();
+			$idPeneliti = $request->has('idPeneliti') ? $request->idPeneliti : 0;
+			$tanggal = $request->has('tanggal') ? $request->tanggal : '';
+			$options = $request->has('options') ? true : false;
+			$tahun = $request->has('tahun') ? $request->tahun : 0;
+            if(!$options){
+				$proyek = PesertaKegiatan::whereHas('kegiatan',function($q) use ($tahun){
+								$q->whereIn('id_tipe_kegiatan',[1,2])
+								  ->when($tahun,function($q1,$tahun){
+									  return $q1->whereYear('tanggal_akhir','>=',$tahun);
+								  });
+						  })->with(['kegiatan'=> function($q) use ($tahun){
+								$q->whereIn('id_tipe_kegiatan',[1,2])
+								  ->when($tahun,function($q1,$tahun){
+									  return $q1->whereYear('tanggal_akhir','>=',$tahun);
+								  });
+						  }])->with(['peneliti'=> function($q){
+								$q->with(['penelitipsb'=> function($q1){
+									$q1->with(['pegawai'])->first();
+								}])->first();
+						  }])->where('id_peran',1)->when($idPeneliti,function($q,$idPeneliti){
+								return $q->where('id_peneliti',$idPeneliti);
+						  })->paginate(10)
+						  ->appends(Input::except('page'));
             }else{
-                $proyek = Proyek::paginate(10);
+                $proyek = Proyek::with(['peserta'=> function($q) use ($idPeneliti){
+							$q->with(['peneliti'=> function($q1){
+								$q1->with(['penelitipsb'=> function($q2){
+									$q2->with(['pegawai'])->first();
+								}])->first();
+							}])->where('id_peneliti',$idPeneliti)->where('id_peran',1)->first();
+						  }])->whereIn('id_tipe_kegiatan',[1,2])
+						  ->where('tanggal_akhir','>=',Date('Y-m-d',strtotime($tanggal)))
+						  ->get();
             }
             Storage::disk('local')->append($path, json_encode($proyek));
-            if(!$proyek->isEmpty()) return ProyekResource::collection($proyek)->additional(['empty'=>false]); 
+            if(!$proyek->isEmpty()) return ['data'=>$proyek]; 
             else return ['empty'=>true];
         }
         catch(Exception $err){
             Log::info($err);
         }
     }
+	
+	public function getAllPeneliti(Request $request){
+		$peserta = PenelitiPSB::with(['pegawai'])->get();
+		return ['data'=>$peserta];
+	}
 
     public function storeTransProyek($idTransaksi,$idProyek,$nominalType,$nominal,$tanggal){
         try{

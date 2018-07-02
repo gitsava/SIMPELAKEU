@@ -11,7 +11,7 @@
                         <div class="col-xs-12 col-md-5">
                             <div class="form-group">
                                 <label>Nama Simpanan</label>
-                                <input class="form-control" type="text" v-model="form.namaSimpanan" placeholder="Isikan nama simpanan ...">
+                                <input class="form-control" type="text" v-model="form.namaSimpanan" placeholder="Isikan nama simpanan ..." required>
                             </div>
                         </div>
                         <!--<div class="col-xs-12 col-md-5">

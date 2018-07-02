@@ -186,6 +186,7 @@
         }),
         created(){
             Cookies.set('p', 0, { expires: null })
+			this.$toasted.success('Welcome ' + this.$store.getters['auth/user'].username).goAway(3000)
         },
         methods: {
             getAllTransaksi(tahun){
