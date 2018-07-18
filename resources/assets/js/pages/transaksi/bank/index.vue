@@ -40,13 +40,15 @@
                                         <option value="1">Transaksi Umum</option>
                                         <option value="2">Transaksi Bank</option>
                                         <option value="3">Transaksi Proyek</option>
+                                        <option value="4">Transaksi Unit</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-xs-12 col-md-6">
                                 <div class="form-group">
                                     <label>Kategori</label>
-                                    <v-select ref="select2" v-model="idKat" @input="changeSelectedKategori" :options="kategoriOptions" :settings="kategoriSetting" @search:focus="maybeLoadKategori"/>
+									<input type="text" class="validation" v-model="idKat" required/>
+                                     <v-select ref="select2" :inputId="'select2'" :disabled="kategoriDisabled" :value="idKat" @input="changeSelectedKategori" :options="kategoriOptions" :settings="kategoriSetting" @search:focus="maybeLoadKategori"/>
                                 </div>
                             </div>
                         </div>
@@ -54,13 +56,15 @@
                             <div class="col-xs-12 col-md-6">
                                 <div class="form-group">
                                     <label>PIC</label>
-                                    <v-select  v-model="form.idPegawai" :options="picOptions" :settings="picSetting" @search:focus="maybeLoadPIC"/>
+									<input type="text" class="validation"  v-model="form.idPegawai" required/>
+                                    <v-select ref="select3" :inputId="'select3'" @input="changeProyekPeneliti" :value="form.idPegawai" :options="picOptions" :settings="picSetting"  @search:focus="maybeLoadPIC"/>
                                 </div>
                             </div>
                             <div class="col-xs-12 col-md-6">
                                 <div class="form-group">
                                     <label>Tanggal</label>
-                                    <Datepicker v-model="form.tanggal" :format="'dd/MM/yyyy'" :input-class="'form-control'"/>
+									<input type="text" class="validation" v-model="form.tanggal" required/>
+                                    <Datepicker v-model="form.tanggal" :format="'dd/MM/yyyy'" :input-class="'form-control bg-datepicker'"/>
                                 </div>
                             </div>
                         </div>
@@ -79,7 +83,7 @@
                                     <label>Nominal</label>
                                     <div class="input-group">
                                         <span class="input-group-addon">Rp</span>
-                                        <input v-model="form.nominal" type="text" class="form-control" >
+                                        <money class="form-control money-text-right" v-model="form.nominal" required/>
                                         <span class="input-group-addon">,00</span>
                                     </div>
                                 </div>
@@ -112,7 +116,7 @@
             </div>
             <!-- /.modal -->
         </div>
-        <div v-if="empty" style="margin-bottom:300px"></div>
+        <div v-if="empty || transaksiList.length <= 5" style="margin-bottom:300px"></div>
     </section>
     <!-- /.box -->
 </template>
@@ -152,6 +156,8 @@
             isloading: false,
             jenisTransaksi: null,
             idKat:null,
+			kategoriDisabled: false,
+			idPeneliti: [],
             kategoriOptions: [],
             picOptions: [],
             simpananOptions:[],
@@ -222,25 +228,22 @@
                           this.transaksiList[i].jenis_transaksi
                 console.log(url)
                 this.form.reset()
-                this.maybeLoadPIC()
                 this.maybeLoadSimpanan()
+				var data = null
                 fetch(url)
                   .then(res => res.json())
                   .then(res => {
-                    var data = res.data
+                    data = res.data
                     console.log(data)
                     if(data != 'empty'){
                         this.jenisTransaksi = data.jenis_transaksi
-                        this.maybeLoadKategori()
+						this.maybeLoadPIC()
                         this.form.idTransaksi = data.id_transaksi
                         this.defaultTrans = data.jenis_transaksi
-                        this.idKat = {
-                            value: data.id_kat,
-                            label: data.nama_kat
-                        }
-                        this.defaultKat = data.id_kat
-                        this.form.idPegawai.value = data.id_pegawai
+						this.form.idPegawai.value = data.id_pegawai
                         this.form.idPegawai.label = data.nama_pegawai
+						this.maybeLoadKategori()
+                        this.defaultKat = data.id_kat
                         this.form.tanggal = data.tanggal
                         this.form.nominalType = data.tipe_nominal
                         this.form.nominal = data.nominal
@@ -257,10 +260,17 @@
                             this.form.isInvolvedBank= false;
                             this.form.idSimpanan = null;
                         }
-                        this.changeSelectedKategori()
-                        $("#modal-edit").modal('show')
                     }
-                  })
+                  }).then(()=>{
+						this.idKat = {
+								value: null,
+								label: null
+						}
+						this.idKat.value = data.id_kat
+                        this.idKat.label = data.nama_kat
+						this.changeSelectedKategori(this.idKat)
+						$("#modal-edit").modal('show')
+				  })
                   .catch(err => console.log(err))
             },
             submitEdit(){
@@ -305,14 +315,23 @@
                     .catch(err => console.log(err));
             },
             changeJenisTransaksi(){
-                this.kategoriDisabled = false;
+				if(this.jenisTransaksi==3){
+					this.kategoriDisabled = true;
+				}else{
+					this.kategoriDisabled = false;
+				}
                 this.kategoriOptions=[];
                 this.form.idKategori=null;
                 this.form.idSimpanan= null;
+                this.form.idUnit= null;
+                this.form.idProyek= null;
                 this.form.isInvolvedBank= false;
-                this.idKat = null;
+				this.idKat = null;
+				this.picOptions = [];
+				this.form.idPegawai = null;
             },
-            changeSelectedKategori(){
+            changeSelectedKategori(value){
+				this.idKat = value
                 if(this.idKat != null){
                     console.log(this.defaultTrans + ' ' + this.jenisTransaksi + ' ' + this.defaultKat + ' ' + this.idKat.value)
                     if(this.defaultTrans != this.jenisTransaksi || this.defaultKat != this.idKat.value ){
@@ -326,9 +345,22 @@
                         this.form.idSimpanan = this.idKat
                     }else if(this.jenisTransaksi==3){
                         this.form.idProyek = this.idKat
-                    }
+                    }else if(this.jenisTransaksi==4){
+						this.form.idUnit = this.idKat
+					}
                 }
             },
+			changeProyekPeneliti(value){
+				console.log('change proyek peneliti')
+				if(this.jenisTransaksi==3){
+					this.kategoriOptions=[];
+					this.idKat = null;
+					this.form.idProyek= null;
+					this.kategoriDisabled = false;
+				}
+				this.form.idPegawai = value;
+				console.log(this.form.idPegawai)
+			},
             checkBankChanged(){
                 if(this.form.idSimpanan != null){
                     if(this.defaultTrans != this.jenisTransaksi || this.defaultBank != this.form.idSimpanan.value 
@@ -351,7 +383,10 @@
                 }
             },
             maybeLoadPIC() {
-                return this.picOptions.length <= 0 ? this.getAllPegawaiList() : null
+				if(this.jenisTransaksi==3)
+					return this.picOptions.length <= 0 ? this.populatePenelitiOptions() : null
+				else
+					return this.picOptions.length <= 0 ? this.getAllPegawaiList() : null
             },
             maybeLoadKategori() {
                 return this.kategoriOptions.length <= 0 ? this.getAllKategoriList(this.jenisTransaksi) : null
@@ -378,6 +413,7 @@
             getAllPegawaiList(){
                 let url = '/api/pegawai/getallpegawailist'
                 let self = this
+				this.$refs.select3.toggleLoading(true)
                 fetch(url)
                   .then(res => res.json())
                   .then(res => {
@@ -388,9 +424,30 @@
                             value : data[i].id
                         })
                     }
+					this.$refs.select3.toggleLoading(false)
                   })
                   .catch(err => console.log(err));
             },
+			populatePenelitiOptions(){
+				let url = '/api/transaksiproyek/getallpeneliti';
+                let self = this
+				this.$refs.select3.toggleLoading(true)
+                fetch(url)
+                  .then(res => res.json())
+                  .then(res => {
+                    let data = res.data;
+					console.log(data)
+                    for(var i = 0; i < data.length; i++){
+                        self.picOptions.push({
+                            label : data[i].pegawai.nama,
+                            value : data[i].pegawai.id
+                        })
+						self.idPeneliti[data[i].pegawai.id] = data[i].id_peneliti
+                    }
+					this.$refs.select3.toggleLoading(false)
+                  })
+                  .catch(err => console.log(err));
+		   },
             getAllKategoriList(idTrans){
                 console.log(idTrans)
                 let url = '';
@@ -405,15 +462,22 @@
                         name = 'nama_bank';
                         break;
                     case 3:
-                        url = '/api/transaksiproyek/getallproyeklist';
+                        var dt = (new Date()).getFullYear();
+                        url = '/api/transaksiproyek/getallproyeklist?tahun='+dt+'&idPeneliti='
+							  +this.idPeneliti[this.form.idPegawai.value] + '&options=true';
                         name = 'nama_proyek';
+                        break;
+                    case 4:
+                        url = '/api/transaksiunit/getallunitlist';
+                        name = 'nama';
                         break;
                     default: 
                         url = '';
                         name = '';
                 }
-                
+                console.log(url)
                 let self = this
+                this.$refs.select2.toggleLoading(true)
                 fetch(url)
                   .then(res => res.json())
                   .then(res => {
@@ -425,6 +489,7 @@
                             value : data[i].id
                         })
                     }
+                    this.$refs.select2.toggleLoading(false)
                   })
                   .catch(err => console.log(err));
             },
@@ -442,4 +507,31 @@
   .middle{
     margin: 11% 25%;
   }  
+  .validation {
+	  position: absolute;
+	  width: calc(100% - 1px); height: calc(100% - 1px);
+	  border: none;
+	  border-radius: 5px;
+	  background: none;
+	  left: 0%; bottom: 0;
+	  z-index: -1;
+	  opacity: 0;
+	}
+        .v-select .dropdown-toggle {
+    display: flex !important;
+}
+.v-select .selected-tag {
+    overflow: hidden;
+    text-overflow: ellipsis; 
+    width: 600%;
+}
+.v-select input {
+    width: 100% !important;
+}
+.bg-datepicker {
+    background-color: #ffffff !important;
+}
+.money-text-right {
+    text-align: right;
+}
 </style>

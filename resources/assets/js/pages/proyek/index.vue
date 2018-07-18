@@ -43,6 +43,7 @@
                                         <th>No</th>
 										<th>Ketua Peneliti </th>
                                         <th>Nama Proyek</th>
+										<th>Tahun</th>
                                         <th>Saldo</th>
                                         </tr>
                                         </thead>
@@ -50,9 +51,11 @@
                                             <template v-if="!empty" v-for="(proyek, i) in proyekList">
                                                 <tr>
                                                     <td>{{ (10*(meta.current_page-1))+i+1 }}</td>
-													<td>{{ proyek.peneliti.penelitipsb[0].pegawai.nama }}</td>
-                                                    <td style="width:700px">{{ proyek.kegiatan.nama_kegiatan }}</td>
-                                                    <td>{{ proyek.saldo }}</td>
+													<td>{{ proyek.peneliti.penelitipsb.pegawai.nama }}</td>
+                                                    <td style="width:500px">{{ proyek.kegiatan.nama_kegiatan }}</td>
+													<td>{{ (new Date(proyek.kegiatan.tanggal_awal).getFullYear()) + 
+													    ' - ' + (new Date(proyek.kegiatan.tanggal_akhir).getFullYear())}}</td>
+                                                    <td>{{ proyek.kegiatan.saldo | currency }}</td>
                                                 </tr>
                                             </template>
                                         </tbody>
@@ -74,7 +77,7 @@
                 </div>
             </div>
         </div>
-        <div v-if="empty" style="margin-bottom:300px"></div>
+        <div v-if="empty || proyekList.length<=5" style="margin-bottom:350px"></div>
     </section>
 </template>
 
@@ -101,7 +104,7 @@
 			tahun: null
         }),
         created(){
-            this.getAllProyekList()
+            
             Cookies.set('p', 4, { expires: null })
         },
         methods: {
@@ -159,10 +162,10 @@
                         this.links = data;
                         this.meta = data;
                         this.pages = Array.from({length: this.meta.last_page}, (v, i) => i)
-                        if(this.meta.current_page == 1) this.prevPage = true
-                        else this.prevPage = false
-                        if(this.meta.current_page == this.meta.last_page) this.nextPage = true
-                        else this.nextPage = false
+                        if(this.meta.current_page == 1) this.prevDisabled = true
+                        else this.prevDisabled = false
+                        if(this.meta.current_page == this.meta.last_page) this.nextDisabled = true
+                        else this.nextDisabled = false
                     }
                     this.isloading = false
                   })

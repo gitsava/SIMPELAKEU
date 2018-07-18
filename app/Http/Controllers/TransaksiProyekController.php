@@ -24,17 +24,38 @@ class TransaksiProyekController extends Controller
         try{
             $path = 'logger.txt';
             Storage::disk('local')->append($path, 'Get All Proyek List Routes');
+			$options = $request->has('options') ? $request->options : false;
 			$idPeneliti = $request->has('idPeneliti') ? $request->idPeneliti : 0;
-			$tanggal = $request->has('tanggal') ? $request->tanggal : '';
-			$options = $request->has('options') ? true : false;
 			$tahun = $request->has('tahun') ? $request->tahun : 0;
-            if(!$options){
-				$proyek = PesertaKegiatan::whereHas('kegiatan',function($q) use ($tahun){
-								$q->whereIn('id_tipe_kegiatan',[1,2])
-								  ->when($tahun,function($q1,$tahun){
-									  return $q1->whereYear('tanggal_akhir','>=',$tahun);
+			if($options){
+				$proyek = [];
+				$index = 0;
+				$proyekList = PesertaKegiatan::with(['kegiatan'=> function($q) use ($tahun){
+								  $q->whereIn('id_tipe_kegiatan',[1,2])
+								    ->when($tahun,function($q1,$tahun){
+									    return $q1->whereYear('tanggal_akhir','>=',$tahun);
 								  });
-						  })->with(['kegiatan'=> function($q) use ($tahun){
+							  }])->whereHas('kegiatan',function($q) use ($tahun){
+									$q->whereIn('id_tipe_kegiatan',[1,2])
+									  ->when($tahun,function($q1,$tahun){
+										  return $q1->whereYear('tanggal_akhir','<=',$tahun)
+												 ->whereYear('tanggal_awal','>=',$tahun);
+									  });
+							  })->where('id_peran',1)->when($idPeneliti,function($q,$idPeneliti){
+									return $q->where('id_peneliti',$idPeneliti);
+							  })->get();
+				foreach($proyekList as $pl){
+					$proyek[$index] = [
+										'nama_proyek' => $pl->kegiatan->nama_kegiatan,
+										'id' => $pl->kegiatan->id
+									  ];
+					$index++;
+				}
+				Log::info($proyek);
+				if(!empty($proyek)) return ['data'=>$proyek,'empty'=>false]; 
+				else return ['data'=>[],'empty'=>true];
+			}else{
+				$proyek = PesertaKegiatan::with(['kegiatan'=> function($q) use ($tahun){
 								$q->whereIn('id_tipe_kegiatan',[1,2])
 								  ->when($tahun,function($q1,$tahun){
 									  return $q1->whereYear('tanggal_akhir','>=',$tahun);
@@ -43,24 +64,20 @@ class TransaksiProyekController extends Controller
 								$q->with(['penelitipsb'=> function($q1){
 									$q1->with(['pegawai'])->first();
 								}])->first();
-						  }])->where('id_peran',1)->when($idPeneliti,function($q,$idPeneliti){
+						  }])->whereHas('kegiatan',function($q) use ($tahun){
+								$q->whereIn('id_tipe_kegiatan',[1,2])
+								  ->when($tahun,function($q1,$tahun){
+									  return $q1->whereYear('tanggal_akhir','<=',$tahun)
+											 ->whereYear('tanggal_awal','>=',$tahun);
+								  });
+						  })->where('id_peran',1)->when($idPeneliti,function($q,$idPeneliti){
 								return $q->where('id_peneliti',$idPeneliti);
 						  })->paginate(10)
 						  ->appends(Input::except('page'));
-            }else{
-                $proyek = Proyek::with(['peserta'=> function($q) use ($idPeneliti){
-							$q->with(['peneliti'=> function($q1){
-								$q1->with(['penelitipsb'=> function($q2){
-									$q2->with(['pegawai'])->first();
-								}])->first();
-							}])->where('id_peneliti',$idPeneliti)->where('id_peran',1)->first();
-						  }])->whereIn('id_tipe_kegiatan',[1,2])
-						  ->where('tanggal_akhir','>=',Date('Y-m-d',strtotime($tanggal)))
-						  ->get();
-            }
+				if(!$proyek->isEmpty()) return ['data'=>$proyek,'empty'=>false]; 
+				else return ['data'=>[],'empty'=>true];		  
+			}
             Storage::disk('local')->append($path, json_encode($proyek));
-            if(!$proyek->isEmpty()) return ['data'=>$proyek]; 
-            else return ['empty'=>true];
         }
         catch(Exception $err){
             Log::info($err);
@@ -233,6 +250,7 @@ class TransaksiProyekController extends Controller
             /* ganti status transaksi 1 */
             $transaksi->status = 1;
             $transaksi->keterangan = $request->keterangan;
+            $transaksi->nominal = $request->nominal;
             if($transaksi->save()){
                 /* ganti tipe_nominal sesuai input dan status 1*/
                 $transaksiProyek->tipe_nominal = $request->nominalType;
@@ -316,12 +334,14 @@ class TransaksiProyekController extends Controller
         try{
             $data = [];
             $dataindex = 0;
+            $tanggal = date('Y-m-d',strtotime($request->tanggal)); 
+            Log::info($tanggal);
             if($request->has('idProyek')){
                 $transaksi = Transaksi::whereHas('transaksiProyek',function($query) use ($request){
                                             $query->where('id_kegiatan',$request->idProyek);
                                         })->with(['transaksiProyek'=>function($query) use ($request){
                                             $query->with(['proyek'])->where('id_kegiatan',$request->idProyek);
-                                        }])->with(['pegawai'])->where('status',3)->orderBy('tanggal','desc')->get();
+                                        }])->with(['pegawai'])->where('tanggal',$tanggal)->where('status',3)->get();
             }else{
                 $transaksi = Transaksi::whereHas('transaksiProyek')->with(['transaksiProyek'=>function($query) use ($request){
                                             $query->with(['proyek']);
@@ -349,6 +369,15 @@ class TransaksiProyekController extends Controller
         }catch(Exception $err){
             Log::info($err);
         }
+    }
+
+    public function deletePengajuanDana(Request $request){
+        $idTransaksi = $request->idTransaksi;
+        $transProyek = TransaksiProyek::where('id_transaksi',$idTransaksi);
+        $deletedTransProyek = $transProyek->delete();
+        $transaksi = Transaksi::find($idTransaksi);
+        $deletedTransaksi = $transaksi->delete();
+        return ['status'=>true];
     }
 
     public function getAllTransaksiProyek(Request $request){
@@ -462,4 +491,37 @@ class TransaksiProyekController extends Controller
         return $response;
     }
 
+    public function storePengajuanDanaAsisten(Request $request){
+        try{
+            $idProyek = $request->idProyek['value'];
+            $idPegawai = $request->idPegawai['value'];
+            $tanggal = date('Y-m-d',strtotime($request->tanggal)); 
+            $perkiraanBiaya = $request->perkiraanBiaya;
+            $keterangan = $request->keterangan;
+            $jumlah = $request->jumlah;
+            $unit = $request->unit;
+            $arrLength = sizeof($perkiraanBiaya);
+            for($i = 0; $i < $arrLength; $i++){
+                $transaksi = new Transaksi;
+                $transaksiProyek = new TransaksiProyek;
+                $transaksi->id_pegawai = $idPegawai;
+                $transaksi->nominal = $jumlah[$i]['value'] == 0 ? 
+                    $perkiraanBiaya[$i]['value'] : ($perkiraanBiaya[$i]['value'] * $jumlah[$i]['value']);
+                $transaksi->tanggal = $tanggal;
+                $transaksi->status = 3;
+                if($transaksi->save()){
+                    $transaksiProyek->id_transaksi = $transaksi->id;
+                    $transaksiProyek->id_kegiatan = $idProyek;
+                    $transaksiProyek->keterangan = $keterangan[$i];
+                    $transaksiProyek->jumlah = $jumlah[$i]['value'];
+                    $transaksiProyek->unit = $unit[$i];
+                    $transaksiProyek->perkiraan_biaya = $perkiraanBiaya[$i]['value'];
+                    $transaksiProyek->status = 3;
+                    $transaksiProyek->save();
+                }
+            }
+        }catch(Exception $err){
+            Log::info($err);
+        }
+    }
 }

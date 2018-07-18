@@ -15,6 +15,10 @@
                         <textarea v-model="form.keterangan" class="form-control" rows="3" placeholder="Isikan Keterangan ..."></textarea>
                     </div> 
                     <div class="form-group">
+                        <label>Nominal</label>
+                        <money class="form-control money-text-right" v-model="form.nominal" required/>
+                    </div>
+                    <div class="form-group">
                         <label>Tipe Nominal</label>
                         <select class="form-control" v-model="form.nominalType">
                             <option value="d">Debit</option>
@@ -54,11 +58,27 @@
                     </div>
                     <div class="box-body">
                         <div class="row">
+                            <div class="col-xs-12 col-md-3">
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <span class="input-group-addon">Ketua Peneliti</span>
+                                        <v-select ref="select1" :value="peneliti" @input="changeKetua" :options="options" @search:focus="loadOptions"/>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="col-xs-12 col-md-4">
                                 <div class="form-group">
                                     <div class="input-group">
                                         <span class="input-group-addon">Proyek</span>
-                                        <v-select v-model="proyek" ref="select" style="max-height:36px" :options="proyekOptions" :settings="proyekSetting" @search:focus="maybeLoadProyek"/>
+                                        <v-select :disabled="proyekDisabled" ref="select" style="max-height:36px" v-model="proyek" :options="proyekOptions" @search:focus="maybeLoadProyek"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-md-4">
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <span class="input-group-addon">Tanggal Pengajuan</span>
+                                        <Datepicker v-model="tanggal" :format="'dd/MM/yyyy'" :input-class="'form-control bg-datepicker'"/>
                                     </div>
                                 </div>
                             </div>
@@ -67,6 +87,8 @@
                                     <v-button :type="'primary'"  :method="loadData">Filter</v-button>
                                 </div>
                             </div>
+                        </div>
+                        <div class="row">
                             <div class="col-xs-12 col-md-4">
                                 <div class="form-group">
                                     <div class="input-group">
@@ -101,7 +123,7 @@
                                                     <td>{{ filteredData[item].tanggal }}</td>
                                                     <td>{{ filteredData[item].pegawai }}</td>
                                                     <td class="keterangan">{{ filteredData[item].keterangan }}</td>
-                                                    <td>{{ filteredData[item].nominal }}</td>
+                                                    <td>{{ filteredData[item].nominal | currency}}</td>
                                                     <td v-if="filteredData[item].kategori.length > 17" data-toggle="tooltip" :title="filteredData[item].kategori">{{ filteredData[item].kategori.substring(0,17) }}...</td>
                                                     <td v-if="filteredData[item].kategori.length <= 17">{{ filteredData[item].kategori }}</td>
                                                     <td>
@@ -109,7 +131,7 @@
                                                         <button v-if="filteredData[item].delete_able" type="button" class="btn btn-box-tool" v-on:click="deleteAlert(item)"><i class="fa fa-trash"></i></button>
                                                     </td>
                                                 </tr>
-                                            </template>
+                                        </template>
                                         </tbody>
                                     </table>
                                     <p v-if="empty" style="text-align:center"> No Records Found. </p>
@@ -125,11 +147,12 @@
                             </template>
                             <li :class="{'disabled':currentPage == page-1}" style="cursor:pointer" @click="changePage(currentPage-1)"><a>»</a></li>
                         </ul>
+                        <button v-if="!empty" class="btn btn-primary pull-right"  >Download Pdf</button>
                     </div>
                 </div>
             </div>
         </div>
-        <div v-if="empty" style="margin-bottom:300px"></div>
+        <div v-if="empty || filteredData.length <= 5" style="margin-bottom:300px"></div>
     </section>
 </template>
 
@@ -149,23 +172,22 @@
             success : 'success',
             editClicked : false,
             bankChecked: false,
-            tahun: null,
+            tahun: new Date().getFullYear(),
+            disDate: null,
             form: new Form({
                 idTransaksi: 0,
                 nominalType: null,
                 idSimpanan: null,
                 isInvolvedBank: false,
-                keterangan: null
+                keterangan: null,
+                nominal: 0,
             }),
-            picOptions: [],
+            options: [],
+            tanggal: null,
+            proyekDisabled: true,
             proyekOptions: [],
             simpananOptions:[],
-            proyekSetting: {
-                width:'100%'
-            },
-            picSetting: {
-                width:'100%',
-            },
+            peneliti: null,
             proyek: null,
             search: null,
             list: [],
@@ -178,22 +200,56 @@
             empty: true,
         }),
         created(){
-            this.getAllPenggunaanDana(null)
             Cookies.set('p', 2, { expires: null })
+            this.disableDate()
         },
         methods: {
+            disableDate(){
+                this.disDate = {
+                    from: new Date()
+                }
+            },
             loadData: function(loadStatus){
-                console.log(loadStatus)
                 this.getAllPenggunaanDana(this.proyek['value'])
             },
             edit: function(i){
                 this.form.idTransaksi = this.list[i].id
                 this.form.keterangan = this.list[i].keterangan
+                this.form.nominal = this.list[i].nominal
                 $("#modal-edit").modal('show')  
             },
-            maybeLoadPIC() {
-                return this.picOptions.length <= 0 ? this.getAllPegawaiList() : null
-            },
+            changeKetua(value){
+				this.peneliti = value
+                if(this.peneliti != null){
+                    this.proyekDisabled = false
+                    
+                }else{
+                    this.proyekDisabled = true
+                }
+                this.proyekOptions = []
+                this.proyek = null
+			},
+            loadOptions(){
+				return this.options.length <= 0 ? this.populateOptions() : null
+		    },
+		    populateOptions(){
+				let url = '/api/transaksiproyek/getallpeneliti';
+				let self = this
+				this.$refs.select1.toggleLoading(true)
+				fetch(url)
+				  .then(res => res.json())
+				  .then(res => {
+					let data = res.data;
+					for(var i = 0; i < data.length; i++){
+						self.options.push({
+							label : data[i].pegawai.nama,
+							value : data[i].id_peneliti
+						})
+					}
+					this.$refs.select1.toggleLoading(false)
+				  })
+				  .catch(err => console.log(err));
+ 		    },
             maybeLoadProyek(){
                 return this.proyekOptions.length <= 0 ? this.populateProyekOptions() : null
             },
@@ -219,7 +275,8 @@
                   .catch(err => console.log(err));
             },
             populateProyekOptions(){
-                let url = '/api/transaksiproyek/getallproyeklist';
+                let url = '/api/transaksiproyek/getallproyeklist?tahun='+this.tahun+'&idPeneliti='
+							  +this.peneliti.value + '&options=true';
                 let self = this
                 this.$refs.select.toggleLoading(true)
                 fetch(url)
@@ -236,30 +293,19 @@
                   })
                   .catch(err => console.log(err));
             },
-            getAllPegawaiList(){
-                let url = '/api/pegawai/getallpegawailist'
-                let self = this
-                fetch(url)
-                    .then(res => res.json())
-                    .then(res => {
-                    let data = res.data;
-                    for(var i = 0; i < data.length; i++){
-                        self.picOptions.push({
-                            label : data[i].nama,
-                            value : data[i].id
-                        })
-                    }
-                    })
-                    .catch(err => console.log(err));
-            },
-            submitSearch(searchKey){
-                this.filteredData = this.list.filter(data => data.keterangan.toLowerCase().indexOf(searchKey.toLowerCase(),0) != -1 &&  data.pegawai != '')
+            submitSearch(){
+                this.filteredData = this.list.filter(data => data.keterangan.toLowerCase().indexOf(this.search.toLowerCase(),0) != -1 &&  data.pegawai != '')
                 this.createPagination()
             },
             getAllPenggunaanDana(proyek){
                 this.isloading = true
-                let url = proyek == null? '/api/pengajuandanaproyek/fetch' : '/api/pengajuandanaproyek/fetch?idProyek='+proyek
+                let tgl = this.tanggal
+                let dt =  (tgl.getMonth()+1) + '/' + tgl.getDate() + '/' + tgl.getFullYear()
+                let url = proyek == null? '/api/pengajuandanaproyek/fetch' 
+                    : '/api/pengajuandanaproyek/fetch?idProyek='+proyek+'&tanggal='+dt
                 let self = this
+                console.log(dt)
+                console.log(this.tanggal)
                 fetch(url)
                     .then(res => res.json())
                     .then(res => {
@@ -313,13 +359,25 @@
 .v-select .selected-tag {
     overflow: hidden;
     text-overflow: ellipsis; 
-    width: 100%;
+    width: 600%;
 }
 .v-select input {
-    width: 1px !important;
+    width: 100% !important;
 }
-td.keterangan{
-    width: 300px;
+.validation {
+  position: absolute;
+  width: calc(100% - 1px); height: calc(100% - 1px);
+  border: none;
+  border-radius: 5px;
+  background: none;
+  left: 0%; bottom: 0;
+  z-index: -1;
+  opacity: 0;
 }
-
+.bg-datepicker {
+    background-color: #ffffff !important;
+}
+.money-text-right {
+    text-align: right;
+}
 </style>

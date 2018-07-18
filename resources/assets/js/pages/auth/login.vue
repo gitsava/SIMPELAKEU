@@ -48,7 +48,7 @@
 <script>
 import Form from 'vform'
 import LoginWithGithub from '~/components/LoginWithGithub'
-
+import Cookies from 'js-cookie'
 export default {
   middleware: 'guest',
   layout:'basic',
@@ -88,9 +88,14 @@ export default {
         if (this.$store.getters['auth/user']['user_role_s_i'][0].id_role === 8) {
           // Redirect transaksi.
           this.$router.push({ name: 'transaksi' })
+          Cookies.set('p', 0, { expires: null })
         }else if (this.$store.getters['auth/user']['user_role_s_i'][0].id_role === 3) {
           // Redirect home.
           this.$router.push({ name: 'dashboard' })
+        }else if (this.$store.getters['auth/user']['user_role_s_i'][0].id_role === 9) {
+          // Redirect home.
+          Cookies.set('p', 0, { expires: null })
+          this.$router.push({ name: 'tambahpengajuan' })
         }
       }
       else{

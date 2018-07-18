@@ -33,12 +33,13 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::get('downloadexcel/laporantahunanproyek','TransaksiProyekController@downloadExcelProyek');
     Route::get('downloadexcel/laporantahunanunit','TransaksiUnitController@downloadExcelUnit');
     Route::get('transaksi/rekap/fetchrekap/{tahun}','TransaksiController@downloadRekap');
-    
+    Route::post('asisten/pengajuan/store','TransaksiProyekController@storePengajuanDanaAsisten');
     Route::post('pengajuandanaproyek/store','TransaksiProyekController@storePengajuanDana');
     Route::post('pengajuandanaunit/store','TransaksiUnitController@storePengajuanDana');
     Route::post('transaksiumum/storekategori','TransaksiUmumController@storeKategori');
     Route::patch('transaksiumum/editkategori','TransaksiUmumController@storeKategori');
     Route::patch('transaksiumum/deletekategori','TransaksiUmumController@deleteKategori');
+    Route::patch('pengajuandana/delete','TransaksiProyekController@deletePengajuanDana');
     Route::patch('transaksi/delete','TransaksiController@deleteTransaksi');
     Route::patch('transaksi/edit','TransaksiController@forceEditTransaksi');
     Route::post('transaksibank/storesimpanan','TransaksiBankController@storeSimpanan');

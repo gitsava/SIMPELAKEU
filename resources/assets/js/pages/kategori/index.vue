@@ -33,7 +33,7 @@
             </div>
             <!-- /.modal -->
         </div>
-        <div v-if="empty" style="margin-bottom:300px"></div>
+        <div v-if="empty || kategoriList.length<=5" style="margin-bottom:300px"></div>
     </section>
     <!-- /.box -->
 </template>

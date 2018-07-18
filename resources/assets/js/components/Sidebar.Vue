@@ -67,8 +67,13 @@
     </template>
     <template v-if="user.user_role_s_i[0].id_role == 9">
         <li :class="{'active':active==0}" @click="activate(0)">
-            <router-link :to="{ name: 'simpanan' }">
+            <router-link :to="{ name: 'tambahpengajuan' }">
             <i class="fa fa-money"></i> <span>Pengajuan Dana</span>
+            </router-link>
+        </li>
+        <li :class="{'active':active==1}" @click="activate(1)">
+            <router-link :to="{ name: 'asistenpengajuan' }">
+            <i class="fa fa-clipboard"></i> <span>Daftar Pengajuan</span>
             </router-link>
         </li>
     </template>

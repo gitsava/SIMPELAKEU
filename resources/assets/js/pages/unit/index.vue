@@ -38,7 +38,7 @@
                                                 <tr>
                                                     <td>{{ (10*(meta.current_page-1))+i+1 }}</td>
                                                     <td style="width:700px">{{ unit.nama }}</td>
-                                                    <td>{{ unit.saldo }}</td>
+                                                    <td>{{ unit.saldo | currency}}</td>
                                                 </tr>
                                             </template>
                                         </tbody>

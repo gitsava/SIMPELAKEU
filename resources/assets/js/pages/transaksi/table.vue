@@ -65,21 +65,22 @@
                                             <td>{{ list[item].pegawai }}</td>
                                             <td class="keterangan">{{ list[item].keterangan }}</td>
                                             <template v-if="list[item].nominal_type == 'd'">
-                                                <td>{{ list[item].nominal }}</td>
-                                                <td></td>
+                                                <td>{{ list[item].nominal | currency}}</td>
+                                                <td ></td>
                                             </template>
                                             <template v-if="list[item].nominal_type == 'k'">
                                                 <td></td>
-                                                <td>{{ list[item].nominal }}</td>
+                                                <td >{{ list[item].nominal | currency}}</td>
                                             </template>
                                             <template v-if="list[item].nominal_type == ''">
                                                 <td></td>
                                                 <td></td>
                                             </template>
-                                            <td>{{ list[item].saldo }}</td>
-                                            <td v-if="list[item].kategori.length > 17" data-toggle="tooltip" :title="list[item].kategori">{{ list[item].kategori.substring(0,17) }}...</td>
-                                            <td v-if="list[item].kategori.length <= 17">{{ list[item].kategori }}</td>
-                                            <td>
+                                            <td v-if="list[item].saldo >= 0" class="pull-right">{{ list[item].saldo | currency}}</td>
+											<td v-if="list[item].saldo < 0" class="pull-right">({{ -list[item].saldo | currency}})</td>
+                                            <td  v-if="list[item].kategori.length > 17" data-toggle="tooltip" :title="list[item].kategori">{{ list[item].kategori.substring(0,17) }}...</td>
+                                            <td  v-if="list[item].kategori.length <= 17">{{ list[item].kategori }}</td>
+                                            <td style="width:100px">
                                                 <button v-if="list[item].edit_able" type="button" id="edit" class="btn btn-box-tool" v-on:click="edit(item)"><i class="fa fa-edit"></i></button>
                                                 <button v-if="list[item].delete_able" type="button" class="btn btn-box-tool" v-on:click="deleteAlert(item)"><i class="fa fa-trash"></i></button>
                                             </td>

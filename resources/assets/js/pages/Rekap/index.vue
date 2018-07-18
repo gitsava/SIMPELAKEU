@@ -99,14 +99,16 @@
                                                 <tr>
                                                     <td style="width:50px">{{ i+1 }}</td>
                                                     <td >{{ item.kegiatan }}</td>
-                                                    <td class="pull-right">{{ item.saldo }}</td>
+                                                    <td v-if="item.saldo>=0" class="pull-right">{{ item.saldo | currency}}</td>
+													<td v-if="item.saldo<0" class="pull-right">({{ -item.saldo | currency}})</td>
                                                 </tr>
                                         </template>
                                         <template v-if="!emptyData">
                                             <tr>
                                                 <td></td>
                                                 <td style="text-align:center">Total</td>
-                                                <td class="pull-right">{{ totalSaldoData }}</td>
+                                                <td v-if="totalSaldoData>=0" class="pull-right">{{ totalSaldoData | currency}}</td>
+												<td v-if="totalSaldoData<0" class="pull-right">({{ -totalSaldoData | currency}})</td>
                                             </tr>
                                         </template>
                                         </tbody>
@@ -126,14 +128,16 @@
                                                 <tr>
                                                     <td style="width:50px">{{ i+1 }}</td>
                                                     <td >{{ item.kegiatan }}</td>
-                                                    <td class="pull-right">{{ item.saldo }}</td>
+                                                    <td v-if="item.saldo>=0" class="pull-right">{{ item.saldo | currency}}</td>
+													<td v-if="item.saldo<0" class="pull-right">({{ -item.saldo | currency}})</td>
                                                 </tr>
                                         </template>
                                         <template v-if="!emptySimpanan">
                                             <tr>
                                                 <td>&nbsp;</td>
                                                 <td style="text-align:center">Total</td>
-                                                <td class="pull-right">{{ totalSaldoSimpanan }}</td>
+                                                <td v-if="totalSaldoSimpanan>=0" class="pull-right">{{ totalSaldoSimpanan | currency}}</td>
+												<td v-if="totalSaldoSimpanan<0" class="pull-right">({{ -totalSaldoSimpanan | currency}})</td>
                                             </tr>
                                         </template>
                                         </tbody>

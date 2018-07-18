@@ -11,7 +11,7 @@
                         <div class="col-xs-12 col-md-6">
                             <div class="form-group">
                                 <label>Jenis Transaksi</label>
-                                <select class="form-control" v-model="jenisTransaksi" @change="changeJenisTransaksi()" required>
+                                <select class="form-control" v-model="jenisTransaksi" @change="changeJenisTransaksi" required>
                                     <option value="1">Transaksi Umum</option>
                                     <option value="2">Transaksi Bank</option>
                                     <option value="3">Transaksi Proyek</option>
@@ -23,7 +23,7 @@
                             <div class="form-group">
                                 <label>Kategori</label>
 								<input type="text" class="validation" v-model="idKat" required/>
-                                <v-select ref="select2" :disabled="kategoriDisabled" v-model="idKat" :onChange="changeSelectedKategori()" :options="kategoriOptions" :settings="kategoriSetting" @search:focus="maybeLoadKategori"/>
+                                <v-select ref="select2" :inputId="'select2'" :disabled="kategoriDisabled" :value="idKat" @input="changeSelectedKategori" :options="kategoriOptions" :settings="kategoriSetting" @search:focus="maybeLoadKategori"/>
                             </div>
                         </div>
                     </div>
@@ -31,15 +31,15 @@
                         <div class="col-xs-12 col-md-6">
                             <div class="form-group">
                                 <label>PIC</label>
-								<input type="text" class="validation" v-model="form.idPegawai" required/>
-                                <v-select v-model="form.idPegawai" :options="picOptions" :settings="picSetting" @search:focus="maybeLoadPIC"/>
+								<input type="text" class="validation"  v-model="form.idPegawai" required/>
+                                <v-select ref="select3" :inputId="'select3'" @input="changeProyekPeneliti" :value="form.idPegawai" :options="picOptions" :settings="picSetting"  @search:focus="maybeLoadPIC"/>
                             </div>
                         </div>
                         <div class="col-xs-12 col-md-6">
                             <div class="form-group">
                                 <label>Tanggal</label>
 								<input type="text" class="validation" v-model="form.tanggal" required/>
-                                <Datepicker v-model="form.tanggal" :format="'dd/MM/yyyy'" :input-class="'form-control'"/>
+                                <Datepicker v-model="form.tanggal" :format="'dd/MM/yyyy'" :input-class="'form-control bg-datepicker' "/>
                             </div>
                         </div>
                     </div>
@@ -58,8 +58,8 @@
                                 <label>Nominal</label>
                                 <div class="input-group">
                                     <span class="input-group-addon">Rp</span>
-                                    <input v-model="form.nominal" type="number" min="0" class="form-control" required>
-                                    <span class="input-group-addon">,00</span>
+                                    <money class="form-control money-text-right" v-model="form.nominal" required/>
+                                    <span class="input-group-addon">.00</span>
                                 </div>
                             </div>
                         </div>
@@ -92,11 +92,7 @@
 </template>
 <script>
     import Form from 'vform';
-    import Datepicker from 'vuejs-datepicker';
     export default {
-        components:{
-            Datepicker
-        },
         data:()=>({
             form: new Form({
                 idKategori: 0,
@@ -115,6 +111,7 @@
             }),
             jenisTransaksi: null,
             idKat:null,
+			idPeneliti: [],
             kategoriDisabled: true,
             kategoriOptions: [],
             picOptions: [],
@@ -134,7 +131,11 @@
         },
         methods:{
             changeJenisTransaksi(){
-                this.kategoriDisabled = false;
+				if(this.jenisTransaksi==3){
+					this.kategoriDisabled = true;
+				}else{
+					this.kategoriDisabled = false;
+				}
                 this.kategoriOptions=[];
                 this.form.idKategori=null;
                 this.form.keterangan= null;
@@ -143,8 +144,12 @@
                 this.form.idProyek= null;
                 this.form.isInvolvedBank= false;
 				this.idKat = null;
+				this.picOptions = [];
+				this.form.idPegawai = null;
             },
-            changeSelectedKategori(){
+            changeSelectedKategori(value){
+			   console.log('change selected kategori')
+			   this.idKat = value
                if(this.jenisTransaksi==1){
                    this.form.idKategori = this.idKat
                }else if(this.jenisTransaksi==2){
@@ -155,6 +160,17 @@
                    this.form.idUnit = this.idKat
                }
             },
+			changeProyekPeneliti(value){
+				console.log('change proyek peneliti')
+				if(this.jenisTransaksi==3){
+					this.kategoriOptions=[];
+					this.idKat = null;
+					this.form.idProyek= null;
+					this.kategoriDisabled = false;
+				}
+				this.form.idPegawai = value;
+				console.log(this.form.idPegawai)
+			},
             storeTransaksi(){
                 let self = this
                 let url = 'api/transaksi/store'
@@ -171,7 +187,10 @@
                     }) 
             },
             maybeLoadPIC() {
-                return this.picOptions.length <= 0 ? this.getAllPegawaiList() : null
+				if(this.jenisTransaksi==3)
+					return this.picOptions.length <= 0 ? this.populatePenelitiOptions() : null
+				else
+					return this.picOptions.length <= 0 ? this.getAllPegawaiList() : null
             },
             maybeLoadKategori() {
                 return this.kategoriOptions.length <= 0 ? this.getAllKategoriList(this.jenisTransaksi) : null
@@ -200,6 +219,7 @@
             getAllPegawaiList(){
                 let url = '/api/pegawai/getallpegawailist'
                 let self = this
+				this.$refs.select3.toggleLoading(true)
                 fetch(url)
                   .then(res => res.json())
                   .then(res => {
@@ -210,9 +230,30 @@
                             value : data[i].id
                         })
                     }
+					this.$refs.select3.toggleLoading(false)
                   })
                   .catch(err => console.log(err));
             },
+			populatePenelitiOptions(){
+				let url = '/api/transaksiproyek/getallpeneliti';
+                let self = this
+				this.$refs.select3.toggleLoading(true)
+                fetch(url)
+                  .then(res => res.json())
+                  .then(res => {
+                    let data = res.data;
+					console.log(data)
+                    for(var i = 0; i < data.length; i++){
+                        self.picOptions.push({
+                            label : data[i].pegawai.nama,
+                            value : data[i].pegawai.id
+                        })
+						self.idPeneliti[data[i].pegawai.id] = data[i].id_peneliti
+                    }
+					this.$refs.select3.toggleLoading(false)
+                  })
+                  .catch(err => console.log(err));
+		   },
             getAllKategoriList(idTrans){
                 console.log(idTrans)
                 let url = '';
@@ -227,12 +268,12 @@
                         name = 'nama_bank';
                         break;
                     case 3:
-                        var dt = Date.now();
-                        url = '/api/transaksiproyek/getallproyeklist?tanggal='+dt;
+                        var dt = (new Date()).getFullYear();
+                        url = '/api/transaksiproyek/getallproyeklist?tahun='+dt+'&idPeneliti='
+							  +this.idPeneliti[this.form.idPegawai.value] + '&options=true';
                         name = 'nama_proyek';
                         break;
                     case 4:
-                        var dt = Date.now();
                         url = '/api/transaksiunit/getallunitlist';
                         name = 'nama';
                         break;
@@ -240,7 +281,7 @@
                         url = '';
                         name = '';
                 }
-                
+                console.log(url)
                 let self = this
                 this.$refs.select2.toggleLoading(true)
                 fetch(url)
@@ -272,10 +313,10 @@
 .v-select .selected-tag {
     overflow: hidden;
     text-overflow: ellipsis; 
-    width: 100%;
+    width: 600%;
 }
 .v-select input {
-    width: 1px !important;
+    width: 100% !important;
 }
 .validation {
   position: absolute;
@@ -286,5 +327,11 @@
   left: 0%; bottom: 0;
   z-index: -1;
   opacity: 0;
+}
+.bg-datepicker {
+    background-color: #ffffff !important;
+}
+.money-text-right {
+    text-align: right;
 }
 </style>

@@ -11,19 +11,27 @@
             <!-- /.box-header -->
             <div class="box-body">
             <div class="row">
+				<div class="col-xs-12 col-md-4">
+					<div class="form-group">
+						<div class="input-group">
+							<span class="input-group-addon">Peneliti</span>
+							<v-select ref="select1" @input="changeKetua" :value="peneliti" :options="options" @search:focus="loadOptions"/>
+						</div>
+					</div>
+				</div>
+				<div class="col-xs-12 col-md-2">
+                    <div class="form-group">
+                        <div class="input-group">
+                            <span class="input-group-addon">Tahun</i></span>
+                            <input type="text" @keydown="changeTahun" class="form-control" v-model="tahun">
+                        </div>
+                    </div>
+                </div>
                 <div class="col-xs-12 col-md-5">
                     <div class="form-group">
                         <div class="input-group">
                             <span class="input-group-addon">Proyek</span>
-                            <v-select ref="select" style="max-height:36px" v-model="proyek" :options="proyekOptions" :settings="proyekSetting" @search:focus="maybeLoadProyek"/>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xs-12 col-md-2">
-                    <div class="form-group">
-                        <div class="input-group">
-                            <span class="input-group-addon">Tahun</i></span>
-                            <input type="text" class="form-control" v-model="tahun">
+                            <v-select :disabled="proyekDisabled" ref="select" style="max-height:36px" v-model="proyek" :options="proyekOptions" :settings="proyekSetting" @search:focus="maybeLoadProyek"/>
                         </div>
                     </div>
                 </div>
@@ -32,7 +40,7 @@
                         <v-button :type="'primary'" :loading="isFilterLoading"  :method="loadData">Filter</v-button>
                     </div>
                 </div>
-                <div class="col-xs-12 col-md-3">
+                <!--<div class="col-xs-12 col-md-3">
                     <div class="form-group">
                         <div class="input-group">
                             <span class="input-group-addon"><i class="fa fa-search"></i></span>
@@ -44,7 +52,7 @@
                     <div class="form-group">
                         <button class="btn btn-success" @click="submitSearch" >Cari</button>
                     </div>
-                </div>
+                </div>-->
             </div>
             <div class="row">
                 <div class="col-xs-12 col-md-12">
@@ -66,27 +74,28 @@
                             <template v-if="!empty" v-for="(item, i) in indexList[currentPage]">
                                 <tr>
                                     <td>{{ list[item].tanggal }}</td>
-                                    <td>{{ list[item].pegawai }}</td>
-                                    <td class="keterangan">{{ list[item].keterangan }}</td>
-                                    <template v-if="list[item].nominal_type == 'd'">
-                                        <td>{{ list[item].nominal }}</td>
-                                        <td></td>
-                                    </template>
-                                    <template v-if="list[item].nominal_type == 'k'">
-                                        <td></td>
-                                        <td>{{ list[item].nominal }}</td>
-                                    </template>
-                                    <template v-if="list[item].nominal_type == ''">
-                                        <td></td>
-                                        <td></td>
-                                    </template>
-                                    <td>{{ list[item].saldo }}</td>
-                                    <td v-if="list[item].kategori.length > 17" data-toggle="tooltip" :title="list[item].kategori">{{ list[item].kategori.substring(0,17) }}...</td>
-                                    <td v-if="list[item].kategori.length <= 17">{{ list[item].kategori }}</td>
-                                    <td>
-                                        <button v-if="list[item].edit_able" type="button" id="edit" class="btn btn-box-tool" v-on:click="edit(item)"><i class="fa fa-edit"></i></button>
-                                        <button v-if="list[item].delete_able" type="button" class="btn btn-box-tool" v-on:click="deleteAlert(item)"><i class="fa fa-trash"></i></button>
-                                    </td>
+                                            <td>{{ list[item].pegawai }}</td>
+                                            <td class="keterangan">{{ list[item].keterangan }}</td>
+                                            <template v-if="list[item].nominal_type == 'd'">
+                                                <td>{{ list[item].nominal | currency}}</td>
+                                                <td ></td>
+                                            </template>
+                                            <template v-if="list[item].nominal_type == 'k'">
+                                                <td></td>
+                                                <td >{{ list[item].nominal | currency}}</td>
+                                            </template>
+                                            <template v-if="list[item].nominal_type == ''">
+                                                <td></td>
+                                                <td></td>
+                                            </template>
+                                            <td v-if="list[item].saldo >= 0" class="pull-right">{{ list[item].saldo | currency}}</td>
+											<td v-if="list[item].saldo < 0" class="pull-right">({{ -list[item].saldo | currency}})</td>
+                                            <td  v-if="list[item].kategori.length > 17" data-toggle="tooltip" :title="list[item].kategori">{{ list[item].kategori.substring(0,17) }}...</td>
+                                            <td  v-if="list[item].kategori.length <= 17">{{ list[item].kategori }}</td>
+                                            <td style="width:100px">
+                                                <button v-if="list[item].edit_able" type="button" id="edit" class="btn btn-box-tool" v-on:click="edit(item)"><i class="fa fa-edit"></i></button>
+                                                <button v-if="list[item].delete_able" type="button" class="btn btn-box-tool" v-on:click="deleteAlert(item)"><i class="fa fa-trash"></i></button>
+                                            </td>
                                 </tr>
                             </template>
                             </tbody>
@@ -160,11 +169,25 @@
                 width:'100%'
             },
             date : new Date(),
-            tahun: null,
+            tahun: new Date().getFullYear(),
             filteredData : [],
             search: null,
+			peneliti: null,
+			options: [],
+			proyekDisabled: true
         }),
         methods: {
+			changeKetua(value){
+				this.peneliti = value
+				this.changeTahun()
+			},
+			changeTahun(){
+				if(this.tahun.length != 0){
+					this.proyekDisabled = false
+				}else{
+					this.proyekDisabled = true
+				}
+			},
             loadData: function(){
                 this.tahun = this.date.getFullYear()
                 this.$parent.getAllTransaksiProyek(this.proyek['value'],this.tahun)
@@ -173,6 +196,27 @@
                 this.$parent.editModalShow(i)
                 this.$parent.selectedKategori = this.proyek['value']
             },
+			loadOptions(){
+				return this.options.length <= 0 ? this.populateOptions() : null
+		    },
+		    populateOptions(){
+				let url = '/api/transaksiproyek/getallpeneliti';
+				let self = this
+				this.$refs.select1.toggleLoading(true)
+				fetch(url)
+				  .then(res => res.json())
+				  .then(res => {
+					let data = res.data;
+					for(var i = 0; i < data.length; i++){
+						self.options.push({
+							label : data[i].pegawai.nama,
+							value : data[i].id_peneliti
+						})
+					}
+					this.$refs.select1.toggleLoading(false)
+				  })
+				  .catch(err => console.log(err));
+ 		    },
             deleteAlert : function(i){
                 this.$parent.deleteAlertShow(i)
                 this.$parent.selectedKategori = this.kategori['value']
@@ -205,7 +249,8 @@
                 return this.proyekOptions.length <= 0 ? this.populateProyekOptions() : null
             },
             populateProyekOptions(){
-                let url = '/api/transaksiproyek/getallproyeklist';
+                let url = '/api/transaksiproyek/getallproyeklist?tahun='+this.tahun+'&idPeneliti='
+							  +this.peneliti.value + '&options=true';
                 let self = this
                 this.$refs.select.toggleLoading(true)
                 fetch(url)
@@ -226,7 +271,17 @@
     }
 </script>
 <style>
-
+.v-select .dropdown-toggle {
+    display: flex !important;
+}
+.v-select .selected-tag {
+    overflow: hidden;
+    text-overflow: ellipsis; 
+    width: 600%;
+}
+.v-select input {
+    width: 100% !important;
+}
 td.keterangan{
     width: 300px;
 }    

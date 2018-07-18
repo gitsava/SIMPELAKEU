@@ -37,7 +37,7 @@
                                         <tr>
                                             <td>{{ (10*(meta.current_page-1))+i+1 }}</td>
                                             <td>{{ simpanan.nama_bank }}</td>
-                                            <td>{{ simpanan.saldo }}</td>
+                                            <td>{{ simpanan.saldo | currency }}</td>
                                             <td>
                                                 <button type="button" id="edit" class="btn btn-box-tool" v-on:click="edit(i)"><i class="fa fa-edit"></i></button>
                                                 <!--<button type="button" class="btn btn-box-tool" v-on:click="deleteAlert(i)"><i class="fa fa-trash"></i></button>-->

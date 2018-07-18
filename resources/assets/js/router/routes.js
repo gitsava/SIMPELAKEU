@@ -28,6 +28,8 @@ const TransaksiProyek = () => import('~/pages/transaksi/proyek/index').then(m =>
 
 const Pengajuan = () => import('~/pages/pengajuan/index').then(m => m.default || m)
 
+const AsistenPengajuan = () => import('~/pages/pengajuan/proyek/index').then(m => m.default || m)
+
 const Proyek = () => import('~/pages/proyek/index').then(m => m.default || m)
 
 const Unit = () => import('~/pages/unit/index').then(m => m.default || m)
@@ -35,6 +37,8 @@ const Unit = () => import('~/pages/unit/index').then(m => m.default || m)
 const Rekap = () => import('~/pages/rekap/index').then(m => m.default || m)
 
 const Dashboard = () => import('~/pages/dashboard/dashboard').then(m => m.default || m)
+
+const TambahPengajuan = () => import('~/pages/asisten/tambahpengajuan').then(m => m.default || m)
 
 export default [
   { path: '/', name: 'welcome', component: Welcome },
@@ -46,6 +50,7 @@ export default [
   { path: '/riwayat/transaksi-unit', name: 'transaksiunit', component: Transaksiunit },
   { path: '/transaksi', name: 'transaksi', component: Transaksi },
   { path: '/pengajuan-penggunaan-dana', name: 'pengajuan', component: Pengajuan },
+  { path: '/daftar-penggunaan-dana', name: 'asistenpengajuan', component: AsistenPengajuan },
   { path: '/kategori-transaksi', name: 'kategori', component: Kategori },
   { path: '/riwayat/transaksi-proyek', name: 'transaksiproyek', component: TransaksiProyek },
   { path: '/simpanan', name: 'simpanan', component: Simpanan },
@@ -57,6 +62,7 @@ export default [
   { path:'/rekap', name:'rekap', component: Rekap },
   { path: '/home', name: 'home', component: Home },
   { path: '/dashboard', name: 'dashboard', component: Dashboard },
+  { path: '/tambah-pengajuan', name: 'tambahpengajuan', component: TambahPengajuan },
   { path: '/settings',
     component: Settings,
     children: [
