@@ -15,6 +15,7 @@ use App\PenelitiPSB;
 use App\PesertaKegiatan;
 use App\HistoriSaldoProyekPerbulan;
 use App\Http\Controllers\TransaksiBankController;
+use App\Http\Controllers\GeneratePdfController;
 use App\Http\Resources\Proyek as ProyekResource;
 
 class TransaksiProyekController extends Controller
@@ -501,6 +502,7 @@ class TransaksiProyekController extends Controller
             $jumlah = $request->jumlah;
             $unit = $request->unit;
             $arrLength = sizeof($perkiraanBiaya);
+            $transaksiList = collect();
             for($i = 0; $i < $arrLength; $i++){
                 $transaksi = new Transaksi;
                 $transaksiProyek = new TransaksiProyek;
@@ -519,9 +521,17 @@ class TransaksiProyekController extends Controller
                     $transaksiProyek->status = 3;
                     $transaksiProyek->save();
                 }
+                $transaksiList->push($transaksi);
+                Log::info($transaksiList);
             }
+            return $this->generatePdf($transaksiList);
         }catch(Exception $err){
             Log::info($err);
         }
+    }
+
+    public function generatePdf($transaksi){
+        $pdfController = new GeneratePdfController;
+        return $pdfController->generate($transaksi);
     }
 }

@@ -3,150 +3,180 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Fpdf;
+use Dompdf\Dompdf;
+use App\Transaksi;
 
 
 class GeneratePdfController extends Controller
 {
     //
-    public function headerform($id){
-        $get_form=Pengadaan::where('id',$id)->first();
-        $get_tanggal=date('j F Y', strtotime($get_form->tanggal_pengajuan));
-        $pdf = new Fpdf();
-        $pdf::SetTitle('Pengajuan ItemPengadaan sarpras tanggal'.' '.$get_tanggal);
-        /*HEADER PDF*/
-        $pdf::SetLineWidth(0.5);
-        $pdf::SetFont('Arial','',10);
-        $pdf::Cell(40,40,$pdf::Image(public_path().'/images/logoipb.png',15,15,30),1,'C');
-        $pdf::Cell(70,30,'',1,'C');
-        $pdf::SetFont('Arial','',12);
-        $pdf::Cell(40,10,'Nomor Dokumen',1,'C');
-        $pdf::SetFont('Arial','',10);
-        $pdf::Cell(45,10,': F-RM/ADM-06/02/00',1,'C');
-        $pdf::Ln();
-        $pdf::SetFont('Arial','',12);    
-        $pdf::Cell(110);
-        $pdf::Cell(40,10,'Edisi/Revisi',1,'C');
-        $pdf::Cell(45,10,': 2/0',1,'C');
-        $pdf::Ln();
-        $pdf::SetFont('Arial','B',12);    
-        $pdf::Cell(40);
-        $pdf::Cell(70,10,'',1,'C','B');
-        $pdf::SetFont('Arial','',12);
-        $pdf::Cell(40,10,'Tanggal',1,'C');
-        $pdf::SetFont('Arial','',12);
-        $pdf::Cell(45,10,': 3 Oktober 2016',1,'C');
-        $pdf::Ln();
-        $pdf::SetFont('Arial','',12);
-        $pdf::Cell(40);
-        $pdf::Cell(70,10,'',1,'C');
-        $pdf::Cell(40,10,'Halaman',1,'C');
-        $pdf::Cell(45,10,': 6',1,'C');
-        $pdf::SetXY(50,10);
-        $pdf::SetFont('Arial','',9);
-        $pdf::Cell(70,10,'PUSAT STUDI BIOFARMAKA TROPIKA ',0,1,'C');
-        $pdf::SetXY(50,20);
-        $pdf::Cell(70,5,'LPPM-IPB',0,1,'C');
-        $pdf::SetXY(50,30);
-        $pdf::SetFont('Arial','B',12);    
-        $pdf::Cell(70,10,'FORMULIR',0,1,'C');
-        $pdf::SetXY(50,40);
-        $pdf::SetFont('Arial','',10);
-        $pdf::Cell(70,10,'PENGAJUAN DANA',0,1,'C');
-       
+    private $header = '';
+    private $body = '';
+    private $footer = '';
+    private $sign = '';
+
+    public function headerform(){
+       $this->header = '<table style="height: 100px;" border="1" cellspacing="4" cellpadding="1">
+                        <tbody>
+                        <tr style="height: 2px;">
+                        <td style="height: 10.7327px; width: 80px;" rowspan="4"><img height="80" width="80" src="storage/ipb.png" /></td>
+                        <td style="text-align: center; height: 6px; width: 300px;" rowspan="2">PUSAT STUDI BIOFARMAKA TROPIKA LPPM-IPB</td>
+                        <td style="height: 2px; width: 139px;">Nomor Dokumen</td>
+                        <td style="height: 2px; width: 171px;">: F-RM/ADM-06/02/00</td>
+                        </tr>
+                        <tr style="height: 4px;">
+                        <td style="height: 4px; width: 139px;">Edisi/Revisi</td>
+                        <td style="height: 4px; width: 171px;">: 2/0</td>
+                        </tr>
+                        <tr style="height: 3px;">
+                        <td style="height: 3px; width: 216.097px; text-align: center;"><strong>FORMULIR</strong></td>
+                        <td style="height: 3px; width: 139px;">Tanggal</td>
+                        <td style="height: 3px; width: 171px;">: 3 Oktober 2016</td>
+                        </tr>
+                        <tr style="height: 1px;">
+                        <td style="height: 1px; width: 216.097px; text-align: center;">PENGAJUAN DANA</td>
+                        <td style="height: 1px; width: 139px;">Halaman</td>
+                        <td style="height: 1px; width: 171px;">: 6</td>
+                        </tr>
+                        </tbody>
+                        </table>';
+        return $this->header;
     }
 
-    public function footerform($id){
-        $get_form=Pengadaan::where('id',$id)->first();
-        $get_tanggal=date('j F Y', strtotime($get_form->tanggal_pengajuan));
-        $pdf = new Fpdf();
-        /*tanda tangan*/
-        $pdf::Ln();
-        $pdf::SetFont('Arial',null, 11);
-        $pdf::Ln();
-        $pdf::cell(17);
-        $pdf::Cell(62, 6, "Pemohon,", 0, 0, 'L', 0);
-        $pdf::Cell(65, 6, "Mengetahui,", 0, 0, 'L', 0);
-        $pdf::Cell(65, 6, "Menyetujui,", 0, 0, 'L', 0);
-        $pdf::ln();
-        $pdf::cell(18);
-        $pdf::Cell(42, 6, "Airlangga Peminjam", 0, 0, 'L', 0);
-        $pdf::Cell(68, 6, "PJ Bagian Fasilitas & Properti", 0, 0, 'L', 0);
-        $pdf::Cell(100, 6, "Kepala Pusat Studi Biofarmaka", 0, 0, 'L', 0);
-        $pdf::ln();
-        $pdf::cell(19);
-        $pdf::Cell(48, 6, "       ", 0, 0, 'L', 0);
-        $pdf::Cell(85, 6, "                   ", 0, 0, 'L', 0);
-        $pdf::Cell(100, 6, "Tropika", 0, 0, 'L', 0);
-        $pdf::Ln();
-        $pdf::Ln();
-        $pdf::Ln();
-        $pdf::Ln();
-        $pdf::Ln();
-        $pdf::cell(5);
-        $pdf::Cell(65, 6, '( ...................................... ) ', 0, 0, 'L', 0);
-        $pdf::Cell(65, 6, '( ...................................... ) ', 0, 0, 'L', 0);
-        $pdf::Cell(65, 6, '( ...................................... ) ', 0, 0, 'L', 0);
-        /*FOOTER*/
-        $pdf::SetLineWidth(0.7);
-        $pdf::Line(20,246,190,246);
-        $pdf::SetLineWidth(0.1);
-        $pdf::Line(20,247,190,247);
-     
-        $pdf::SetFont('Arial', '', 11);
-        $pdf::Ln();
-        $pdf::Ln();
-        
-        $pdf::SetFont('Arial', 'B', 12);
-        $pdf::cell(190,5,'PUSAT STUDI BIOFARMAKA TROPIKA LPPM-IPB',0,1,'C');
-        $pdf::SetFont('Arial', '', 12);
-        $pdf::cell(190,5,'Kampus IPB Taman Kencana, JL. Taman Kencana N0.3, Bogor 16128',0,1,'C');
-        $pdf::cell(190,5,'Telp/Faks: 0251-8373561/0251-8347525; Email: bfarmaka@gmail.com; Website: ',0,1,'C');
-        $pdf::cell(190,5,'http://biofarmaka.ipb.ac.id',0,1,'C');
+    public function footerform(){
+        $this->footer = '<p>&nbsp;</p>
+                        <hr style="display: block; height: 1px; border: 0; 
+                            border-top: 4px solid #800000; border-bottom: 1px solid #800000; margin: 1em 0; padding: 0;" />
+                        <p style="text-align: center;"><strong>PUSAT STUDI BIOFARMAKA TROPIKA LPPM-IPB</strong></p>
+                        <p style="text-align: center;">Kampus IPB Taman Kencana, Jl. Taman Kencana No. 3, Bogor 16128 <br /> 
+                            Telp/Faks: 0251-8373561/0251-8347525; Email: bfarmaka@gmail.com; Website: http://biofarmaka.ipb.ac.id</p>';
+        return $this->footer;
     }
 
-    public function headertable($transaksiProyek,$transaksi){
-            setlocale(LC_TIME,'id_IN');
-            $pdf = new Fpdf();
-            $pdf::SetLineWidth(0.1);
-            $pdf::SetFont('Arial',null, 11);
-            $pdf::Ln(5);
-            $pdf::cell(8);
-            //atribut ke 4 buat pake garis/border 0 tidak 1 ya
-            $pdf::Cell(176, 30, "", 0, 0, 'L', 0);
-            $pdf::ln(5);
-            $pdf::SetXY(10,60);
-            $pdf::cell(8);
-            $pdf::Cell(162, 8, "Nama Kegiatan          :".' '.$transaksiProyek->proyek->nama_kegiatan, 0, 0, 'L', 0);
-            $pdf::ln(5);
-            $pdf::cell(8);
-            $pdf::Cell(162, 8, "Hari/Tanggal Kegiatan  :".' '.strftime('%A',strtotime($transaksiProyek->proyek->tanggal_awal))
-                       .'/'.date('d-m-Y', strtotime($transaksiProyek->proyek->tanggal_awal)).'-'.strftime('%A',strtotime($transaksiProyek->proyek->tanggal_akhir))
-                       .'/'.date('d-m-Y', strtotime($transaksiProyek->proyek->tanggal_akhir)), 0, 0, 'L', 0);
-            $pdf::ln(5);
-            $pdf::cell(8);
-            $pdf::Cell(162, 8, "Waktu                  :  ", 0, 0, 'L', 0);
-            $pdf::ln(5);
-            $pdf::cell(8);
-            $pdf::Cell(162, 8, "Tempat                 :  ", 0, 0, 'L', 0);
-            $pdf::ln(5);
-            $pdf::cell(8);
-            $pdf::Cell(162, 8, "Tanggal Pengajuan      :  ".date('d-m-Y', strtotime($transaksi->tanggal)), 0, 0, 'L', 0);
-            $pdf::ln(4);
-            $pdf::cell(8);
-            /*HEADER TABEL*/
-            $pdf::SetFont('Arial','B', 10);
-            $pdf::Ln(5);
-            $pdf::SetFillColor(204 , 204, 204);
-            $pdf::cell(8);
-            $pdf::Cell(10, 10, "NO", 1, 0, 'C', 1);
-            $pdf::SetXY(28,89);
-            $pdf::Cell(43, 10, 'KETERANGAN', 1, 0, 'C', 1);
-            $pdf::Cell(23, 10, 'JMLH', 1, 0, 'C', 1);
-            $pdf::Cell(18, 10, 'UNIT', 1, 0, 'C', 1);
-            $pdf::Cell(38, 10, 'PERKIRAAN (Rp)', 1, 0, 'C', 1);
-            $pdf::Cell(31, 10, 'SUB TOTAL (Rp)', 1, 0, 'C', 1);
-            //set font untuk data
-            $pdf::SetFont('Arial',null, 8);
-    }    
+    public function signform(){
+        $this->sign = '<table style="margin-top: 10px;">
+                        <tbody>
+                        <tr>
+                        <td style="text-align: center;" width="170">Pemohon,</td>
+                        <td style="text-align: center;" width="170">Mengetahui,</td>
+                        <td style="text-align: center;" width="170">Menyetujui,</td>
+                        </tr>
+                        <tr>
+                        <td width="170">
+                        <p>&nbsp;</p>
+                        </td>
+                        <td width="170">
+                        <p>&nbsp;</p>
+                        </td>
+                        <td width="170">
+                        <p>&nbsp;</p>
+                        </td>
+                        </tr>
+                        <tr>
+                        <td width="170">&nbsp;</td>
+                        <td width="170">&nbsp;</td>
+                        <td width="170">&nbsp;</td>
+                        </tr>
+                        <tr>
+                        <td width="170">&nbsp;</td>
+                        <td width="170">&nbsp;</td>
+                        <td width="170">&nbsp;</td>
+                        </tr>
+                        <tr>
+                        <td style="text-align: center;" width="170">( &hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;)</td>
+                        <td style="text-align: center;" width="170">(&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;)</td>
+                        <td style="text-align: center;" width="170">( &hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;)</td>
+                        </tr>
+                        </tbody>
+                        </table>';
+        return $this->sign;
+    }
+
+    public function bodyform($transaksiAll){
+        $tableheader = '<table style="margin-left: 10px; margin-top: 10px; border: 1px solid black;">
+                        <tbody>
+                        <tr style="height: 12px;">  
+                        <td style="height: 12px;" width="173">Nama Kegiatan</td>
+                        <td style="font-size: 12px; height: 12px;" width="17">:</td>
+                        <td style="height: 12px;" width="200">'.$transaksiAll[0]->transaksiProyek[0]->proyek->nama_kegiatan.'</td>
+                        </tr>
+                        <tr style="height: 15px;">
+                        <td style="height: 15px;" width="173">Hari/Tanggal Kegiatan</td>
+                        <td style="height: 15px;" width="17">:</td>
+                        <td style="height: 15px;" width="200">&nbsp;</td>
+                        </tr>
+                        <tr style="height: 14px;">
+                        <td style="height: 14px;" width="173">Waktu</td>
+                        <td style="height: 14px;" width="17">:</td>
+                        <td style="height: 14px;" width="200">&nbsp;</td>
+                        </tr>
+                        <tr style="height: 17px;">
+                        <td style="height: 17px;" width="173">Tempat</td>
+                        <td style="height: 17px;" width="17">:</td>
+                        <td style="height: 17px;" width="200">&nbsp;</td>
+                        </tr>
+                        <tr style="height: 24px;">
+                        <td style="height: 24px;" width="173">Tanggal Pengajuan</td>
+                        <td style="height: 24px;" width="17">:</td>
+                        <td style="height: 24px;" width="200">'.$transaksiAll[0]->tanggal.'</td>
+                        </tr>
+                        </tbody>
+                        </table>';
+        $itemHeader = '<table style="border-collapse: collapse; margin-top: 10px;" border="1">
+                        <tbody>
+                        <tr style="height: 45px;">
+                        <td style="background-color: #c0c0c0; text-align: center; height: 45px;" width="30"><strong>NO</strong></td>
+                        <td style="background-color: #c0c0c0; text-align: center; height: 45px;" width="200"><strong>KETERANGAN</strong></td>
+                        <td style="background-color: #c0c0c0; text-align: center; height: 45px;" width="40"><strong>JMLH</strong></td>
+                        <td style="background-color: #c0c0c0; text-align: center; height: 45px;" width="60"><strong>UNIT</strong></td>
+                        <td style="background-color: #c0c0c0; text-align: center; height: 45px;" width="100"><strong>PERKIRAAN BIAYA</strong></td>
+                        <td style="background-color: #c0c0c0; text-align: center; height: 45px;" width="100"><strong>SUB TOTAL</strong></td>
+                        </tr>';
+        $itemBody = '';
+        $no = 1;
+        $total = 0;
+        foreach($transaksiAll as $transaksi){
+            $subtotal = $transaksi->transaksiProyek[0]->jumlah == 0 || $transaksi->transaksiProyek[0]->jumlah == null ? 
+                        $transaksi->transaksiProyek[0]->perkiraan_biaya : 
+                        ($transaksi->transaksiProyek[0]->jumlah * $transaksi->transaksiProyek[0]->perkiraan_biaya);
+            $itemBody = $itemBody.'<tr style="height: 30px;">
+                                    <td style="height: 35px;" width="30">'.$no.'</td>
+                                    <td style="height: 35px;" width="200">'.$transaksi->transaksiProyek[0]->keterangan.'</td>
+                                    <td style="height: 35px;" width="30">'.$transaksi->transaksiProyek[0]->jumlah.'</td>
+                                    <td style="height: 35px;" width="60">'.$transaksi->transaksiProyek[0]->unit.'</td>
+                                    <td style="height: 35px;" width="100">'.$transaksi->transaksiProyek[0]->perkiraan_biaya.'</td>
+                                    <td style="height: 35px;" width="100">'.$subtotal.'</td>
+                                    </tr>';
+            $no++;
+            $total = $total + $subtotal;
+        }
+        if(($no-1)<7){
+            for($i=$no; $i<=7; $i++){
+                $itemBody = $itemBody.'<tr style="height: 35px;">
+                                        <td style="height: 35px;" width="30">&nbsp;</td>
+                                        <td style="height: 35px;" width="200">&nbsp;</td>
+                                        <td style="height: 35px;" width="30">&nbsp;</td>
+                                        <td style="height: 35px;" width="60">&nbsp;</td>
+                                        <td style="height: 35px;" width="100">&nbsp;</td>
+                                        <td style="height: 35px;" width="100">&nbsp;</td>
+                                        </tr>';
+            }
+        }
+        $itemFooter = '<tr style="height: 35px;">
+                        <td style="height: 35px;" width="30">&nbsp;</td>
+                        <td style="height: 35px;" colspan="4" width="200"><strong>&nbsp;TOTAL</strong></td>
+                        <td style="height: 35px;" width="100">'.$total.'</td>
+                        </tr>
+                        </tbody></table>';
+        $this->body = $tableheader.$itemHeader.$itemBody.$itemFooter;
+        return $this->body;
+    }
+
+    public function generate($transaksiAll){
+        $html = $this->headerform().$this->bodyform($transaksiAll).$this->signform().$this->footerform();
+        $dompdf = new Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->render();
+        return $dompdf->stream();
+    }
 }
