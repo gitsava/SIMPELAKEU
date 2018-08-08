@@ -34,6 +34,7 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::get('downloadexcel/laporantahunanunit','TransaksiUnitController@downloadExcelUnit');
     Route::get('transaksi/rekap/fetchrekap/{tahun}','TransaksiController@downloadRekap');
     Route::post('asisten/pengajuan/store','TransaksiProyekController@storePengajuanDanaAsisten');
+    Route::post('asisten/pengajuan/downloadpdf','TransaksiProyekController@generatePdf');
     Route::post('pengajuandanaproyek/store','TransaksiProyekController@storePengajuanDana');
     Route::post('pengajuandanaunit/store','TransaksiUnitController@storePengajuanDana');
     Route::post('transaksiumum/storekategori','TransaksiUmumController@storeKategori');
@@ -47,7 +48,7 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::patch('transaksibank/deletesimpanan','TransaksiBankController@deleteSimpanan');
     Route::patch('settings/profile', 'Settings\ProfileController@update');
     Route::patch('settings/password', 'Settings\PasswordController@update');
-    
+    Route::get('pengajuandanaproyek/fetch','TransaksiProyekController@getAllPengajuanDanaProyek');
 });
 
 Route::group(['middleware' => 'guest:api'], function () {
@@ -72,7 +73,8 @@ Route::group(['middleware' => 'guest:api'], function () {
 	Route::get('transaksiproyek/getallpeneliti','TransaksiProyekController@getAllPeneliti');
     Route::post('oauth/{driver}', 'Auth\OAuthController@redirectToProvider');
     Route::get('oauth/{driver}/callback', 'Auth\OAuthController@handleProviderCallback')->name('oauth.callback');
-    Route::get('pengajuandanaproyek/fetch','TransaksiProyekController@getAllPengajuanDanaProyek');
+    
+    Route::get('pengajuandanaproyek/download','TransaksiProyekController@downloadPdf');
     Route::get('pengajuandanaunit/fetch','TransaksiUnitController@getAllPengajuanDanaUnit');
     Route::get('transaksi/rekap/generaterekap/{tahun}','TransaksiController@generateRekap');
     Route::get('generateexcel/laporantahunanbank','TransaksiBankController@generateExcelBank');

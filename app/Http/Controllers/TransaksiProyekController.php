@@ -333,7 +333,7 @@ class TransaksiProyekController extends Controller
     // return semua pengajuan penggunaan dana proyek
     public function getAllPengajuanDanaProyek(Request $request){
         try{
-            $data = [];
+            $data = collect();
             $dataindex = 0;
             $tanggal = date('Y-m-d',strtotime($request->tanggal)); 
             Log::info($tanggal);
@@ -344,26 +344,44 @@ class TransaksiProyekController extends Controller
                                             $query->with(['proyek'])->where('id_kegiatan',$request->idProyek);
                                         }])->with(['pegawai'])->where('tanggal',$tanggal)->where('status',3)->get();
             }else{
-                $transaksi = Transaksi::whereHas('transaksiProyek')->with(['transaksiProyek'=>function($query) use ($request){
+                $transaksi = Transaksi::whereHas('transaksiProyek')->with(['transaksiProyek'=>function($query){
                                             $query->with(['proyek']);
-                                        }])->with(['pegawai'])->where('status',3)->orderBy('tanggal','desc')->get();
+                                        }])->with(['pegawai'])->where('status',3)->get();
             }
             if(!$transaksi->isEmpty()){
                 foreach($transaksi as $transRow){
-                    $data[$dataindex] = [
+                    $data->push([
                         'id'=> $transRow->id,
                         'tanggal'=> $transRow->tanggal,
                         'pegawai'=> $transRow->pegawai->nama,
-                        'keterangan'=> $transRow->transaksiProyek[0]->keterangan.' '.$transRow->transaksiProyek[0]->jumlah
+                        'keteranganFull'=> $transRow->transaksiProyek[0]->keterangan.' '.$transRow->transaksiProyek[0]->jumlah
                                        .' '.$transRow->transaksiProyek[0]->unit.' x '.$transRow->transaksiProyek[0]->perkiraan_biaya,
+                        'keterangan'=> $transRow->transaksiProyek[0]->keterangan,
+                        'jumlah'=> $transRow->transaksiProyek[0]->jumlah,
+                        'unit'=> $transRow->transaksiProyek[0]->unit,
+                        'perkiraan_biaya'=> $transRow->transaksiProyek[0]->perkiraan_biaya,
                         'nominal'=> $transRow->nominal,
                         'kategori'=> $transRow->transaksiProyek[0]->proyek->nama_kegiatan,
-                        'edit_able'=> true,
-                        'delete_able'=> true,
-                    ];
-                    $dataindex++;
+                    ]);
                 }
-                return ['data'=>$data,'empty'=>false];
+                $dataGrouped = $data->groupBy('tanggal')->transform(function($item,$key){
+                    return $item->groupBy('kategori');
+                });
+                $returnedData = collect();
+                foreach($dataGrouped as $dataTanggal){
+                    foreach($dataTanggal as $dataKategori){
+                        $sum = 0;
+                        for($i=0; $i<sizeof($dataKategori); $i++) {$sum += $dataKategori[$i]['nominal'];}
+                        $returnedData->push([
+                            'tanggal'=> $dataKategori[0]['tanggal'],
+                            'pegawai'=> $dataKategori[0]['pegawai'],
+                            'kategori'=> $dataKategori[0]['kategori'],
+                            'total'=>$sum,
+                            'item'=> $dataKategori
+                        ]);
+                    }
+                }
+                return ['data'=>$returnedData,'empty'=>false];
             }else{
                 return ['empty'=>true];
             }
@@ -502,6 +520,7 @@ class TransaksiProyekController extends Controller
             $jumlah = $request->jumlah;
             $unit = $request->unit;
             $arrLength = sizeof($perkiraanBiaya);
+            Log::info($arrLength);
             $transaksiList = collect();
             for($i = 0; $i < $arrLength; $i++){
                 $transaksi = new Transaksi;
@@ -521,16 +540,31 @@ class TransaksiProyekController extends Controller
                     $transaksiProyek->status = 3;
                     $transaksiProyek->save();
                 }
-                $transaksiList->push($transaksi);
+                $transaksiList->push($transaksi->id);
                 Log::info($transaksiList);
             }
-            return $this->generatePdf($transaksiList);
+            return ['data'=>$transaksiList];
         }catch(Exception $err){
             Log::info($err);
         }
     }
 
-    public function generatePdf($transaksi){
+    public function generatePdf(Request $request){
+        $transaksi = $request->transaksiList;
+        $transaksi = Transaksi::whereHas('transaksiProyek')->with(['transaksiProyek'=>function($query){
+                                            $query->with(['proyek']);
+                                        }])->with(['pegawai'])->whereIn('id',$transaksi)->get();
+        $pdfController = new GeneratePdfController;
+        return $pdfController->generate($transaksi);
+    }
+
+    public function downloadPdf(Request $request){
+        $tanggal = date('Y-m-d',strtotime($request->tanggal)); 
+        $transaksi = Transaksi::whereHas('transaksiProyek',function($query) use ($request){
+                                            $query->where('id_kegiatan',$request->idProyek);
+                                        })->with(['transaksiProyek'=>function($query) use ($request){
+                                            $query->with(['proyek'])->where('id_kegiatan',$request->idProyek);
+                                        }])->with(['pegawai'])->where('tanggal',$tanggal)->where('status',3)->get();
         $pdfController = new GeneratePdfController;
         return $pdfController->generate($transaksi);
     }

@@ -147,7 +147,6 @@
                             </template>
                             <li :class="{'disabled':currentPage == page-1}" style="cursor:pointer" @click="changePage(currentPage-1)"><a>»</a></li>
                         </ul>
-                        <button v-if="!empty" class="btn btn-primary pull-right"  >Download Pdf</button>
                     </div>
                 </div>
             </div>

@@ -7,29 +7,28 @@
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title">Masukan ke Transaksi Proyek</h4>
+                    <h4 class="modal-title">Edit item</h4>
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
                         <label>Keterangan</label>
-                        <textarea v-model="form.keterangan" class="form-control" rows="3" placeholder="Isikan Keterangan ..."></textarea>
+                        <textarea v-model="form.keterangan" class="form-control" rows="3" placeholder="Isikan Keterangan ..." required></textarea>
                     </div> 
                     <div class="form-group">
-                        <label>Tipe Nominal</label>
-                        <select class="form-control" v-model="form.nominalType">
-                            <option value="d">Debit</option>
-                            <option value="k">Kredit</option>
-                        </select>
+                        <label>Jumlah</label>
+                        <input type="number" class="form-control" @input="changePerkiraan($event, index)"  v-model="form.jumlah[index].value"/>
                     </div>
-                    <div class="form-group" v-if="form.nominalType!=null">
-                        <label v-if="form.nominalType == 'd' && form.nominalType!=null">Simpan ke Bank</label>
-                        <label v-if="form.nominalType == 'k' && form.nominalType!=null">Ambil dari Bank</label>
-                        <div class="input-group">
-                            <span class="input-group-addon">
-                            <input type="checkbox" v-model="form.isInvolvedBank">
-                            </span>
-                            <v-select ref="select" :disabled="!form.isInvolvedBank" v-model="form.idSimpanan" :options="simpananOptions" @search:focus="maybeLoadSimpanan"/>
-                        </div>
+                    <div class="form-group">
+                        <label>UNIT</label>
+                        <input type="text" class="form-control" v-model="form.unit[index]"/>
+                    </div>
+                    <div class="form-group">
+                        <label>PERKIRAAN BIAYA</label>
+                        <money class="form-control money-text-right" v-model="form.perkiraanBiaya[index].value" @input="changePerkiraan($event, index)" required/>
+                    </div>
+                    <div class="form-group">
+                        <label>SUB TOTAL</label>
+                        <money class="form-control money-text-right" readonly="readonly" v-model="subTotal[index].value"/>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -85,21 +84,6 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-xs-12 col-md-4">
-                                <div class="form-group">
-                                    <div class="input-group">
-                                        <span class="input-group-addon"><i class="fa fa-search"></i></span>
-                                        <input type="text" v-model="search" class="form-control" placeholder="Cari disini...">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-xs-12 col-md-1">
-                                <div class="form-group">
-                                    <button class="btn btn-success" @click="submitSearch" >Cari</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
                             <div class="col-xs-12 col-md-12">
                                 <div class="table-responsive">
                                     <table class="table no-margin">
@@ -107,9 +91,8 @@
                                         <tr>
                                         <th>Tanggal</th>
                                         <th>Pemohon</th>
-                                        <th>Keterangan</th>
-                                        <th>Total</th>
                                         <th>Proyek</th>
+                                        <th>Total</th>
                                         <th>Aksi</th>
                                         </tr>
                                         </thead>
@@ -118,13 +101,11 @@
                                                 <tr>
                                                     <td>{{ filteredData[item].tanggal }}</td>
                                                     <td>{{ filteredData[item].pegawai }}</td>
-                                                    <td class="keterangan">{{ filteredData[item].keterangan }}</td>
-                                                    <td>{{ filteredData[item].nominal | currency}}</td>
                                                     <td v-if="filteredData[item].kategori.length > 17" data-toggle="tooltip" :title="filteredData[item].kategori">{{ filteredData[item].kategori.substring(0,17) }}...</td>
                                                     <td v-if="filteredData[item].kategori.length <= 17">{{ filteredData[item].kategori }}</td>
+                                                    <td>{{ filteredData[item].total | currency}}</td>
                                                     <td>
-                                                        <button v-if="filteredData[item].edit_able" type="button" id="edit" class="btn btn-box-tool" v-on:click="edit(item)"><i class="fa fa-edit"></i></button>
-                                                        <button v-if="filteredData[item].delete_able" type="button" class="btn btn-box-tool" v-on:click="deleteAlert(item,i)"><i class="fa fa-trash"></i></button>
+                                                        <span style="cursor:pointer" class="label label-success" @click="showDetail(item)">Lihat Detail</span>
                                                     </td>
                                                 </tr>
                                         </template>
@@ -143,7 +124,53 @@
                             </template>
                             <li :class="{'disabled':currentPage == page-1}" style="cursor:pointer" @click="changePage(currentPage-1)"><a>»</a></li>
                         </ul>
-                        <button v-if="!empty" class="btn btn-primary pull-right"  >Download Pdf</button>
+                        <!--<button v-if="!empty" class="btn btn-primary pull-right" @click="downloadPdf" >Download Pdf</button>-->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="box box-info">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Daftar Barang</h3>
+                    </div>
+                    <!-- /.box-header -->
+                    <div class="box-body">
+                        <div class="row">
+                            <div class="col-xs-12 col-md-12">
+                                <div class="table-responsive">
+                                    <table class="table no-margin">
+                                        <thead>
+                                        <tr>
+                                        <th>Keterangan</th>
+                                        <th>Jumlah</th>
+                                        <th>Unit</th>
+                                        <th>Perkiraan Biaya</th>
+                                        <th>Sub Total</th>
+                                        <th>Aksi</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <template v-if="indexItem!=null" v-for="(item, i) in detailData">
+                                                <tr>
+                                                    <td class="keterangan">{{ item.keterangan }}</td>
+                                                    <td>{{ item.jumlah }}</td>
+                                                    <td>{{ item.unit }}</td>
+                                                    <td>{{ item.perkiraan_biaya | currency}}</td>
+                                                    <td>{{ item.nominal }}</td>
+                                                    <td>
+                                                        <!--<button v-if="filteredData[item].edit_able" type="button" id="edit" class="btn btn-box-tool" v-on:click="edit(item)"><i class="fa fa-edit"></i></button>-->
+                                                        <button type="button" class="btn btn-box-tool" v-on:click="deleteAlert(i)"><i class="fa fa-trash"></i></button>
+                                                    </td>
+                                                </tr>
+                                        </template>
+                                        </tbody>
+                                    </table>
+                                    <p v-if="indexItem==null" style="text-align:center"> No Records Found. </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -172,14 +199,14 @@
             disDate: null,
             form: new Form({
                 idTransaksi: 0,
-                nominalType: null,
-                idSimpanan: null,
-                isInvolvedBank: false,
+                perkiraanBiaya: 0,
+                jumlah: 0,
+                unit: null,
                 keterangan: null,
-                nominal: null,
+                subTotal
             }),
             options: [],
-            tanggal: null,
+            tanggal: new Date(),
             proyekDisabled: true,
             proyekOptions: [],
             simpananOptions:[],
@@ -193,11 +220,14 @@
             seq: [],
             limit: 10,
             filteredData: [],
+            detailData: [],
             empty: true,
+            indexItem: null,
         }),
         created(){
             Cookies.set('p', 1, { expires: null })
             this.disableDate()
+            this.getAllPenggunaanDana()
         },
         methods: {
             disableDate(){
@@ -214,11 +244,11 @@
                 this.form.nominal = this.list[i].nominal
                 $("#modal-edit").modal('show')  
             },
-            deleteAlert(i,indexListIndex){
+            deleteAlert(i){
                 this.form.reset()
-                this.form.idTransaksi = this.list[i].id
+                this.form.idTransaksi = this.list[this.indexItem].item[i].id
                 this.$swal({
-                    title: 'Hapus Pengajuan '+this.list[i].keterangan+' Pada tanggal '+ this.list[i].tanggal + '?',
+                    title: 'Hapus Pengajuan '+this.list[this.indexItem].item[i].keteranganFull+' Pada tanggal '+ this.list[this.indexItem].item[i].tanggal + '?',
                     type: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#3085d6',
@@ -227,22 +257,45 @@
                     cancelButtonText: 'Batal'
                     }).then((result) => {
                         if (result.value) {
-                            this.submitDelete(i,indexListIndex)        
+                            this.submitDelete(i)        
                         }
                 })   
             },
-            submitDelete(i,indexListIndex){
+            changePerkiraan: function(event,index){
+                if(this.form.jumlah[index].value > 0){
+                    this.subTotal[index].value = this.form.jumlah[index].value * this.form.perkiraanBiaya[index].value
+                }else{
+                    this.subTotal[index].value = this.form.perkiraanBiaya[index].value 
+                }
+                if(this.subTotal[index].hasOwnProperty('value')) {
+                    if(this.subTotal[index].value != 0){
+                        this.total = this.getSum()
+                    }
+                }
+            },
+            getSum(){
+                var sum = 0
+                for(var i=0; i<this.subTotal.length; i++){
+                    sum += this.subTotal[i].value
+                }
+                return sum
+            },
+            showDetail(i){
+                this.indexItem = i
+                this.detailData = this.filteredData[i].item
+            },
+            submitDelete(i){
                 let url = '/api/pengajuandana/delete'
                 this.form.patch(url)
                     .then(({data})=>{
                         this.$swal(
                             'Terhapus!',
-                            'Pengajuan '+this.list[i].keterangan+' Pada tanggal '+ this.list[i].tanggal+' telah berhasil dihapus.',
+                            'Pengajuan '+this.list[this.indexItem].item[i].keteranganFull+' Pada tanggal '+ this.list[this.indexItem].item[i].tanggal+' telah berhasil dihapus.',
                             'success'
                         )
-                        this.indexList[this.currentPage].splice(indexListIndex,1)
-                        this.list.splice(i,1)
-                        this.filteredData.splice(i,1)
+                        //this.indexList[this.currentPage].splice(this.idex,1)
+                        this.list[this.indexItem].item.splice(i,1)
+                        this.filteredData[this.indexItem].item.splice(i,1)
                         this.makeEmpty()
                     })
                     .catch(err => console.log(err));
@@ -356,6 +409,15 @@
                     }
                     this.filteredData = this.list;
                     this.createPagination();
+                    })
+                    .catch(err => console.log(err));
+            },
+            downloadPdf(){
+                let url = "/api/pengajuandanaproyek/download?idProyek=" + this.proyek['value'] + "&tanggal=" +this.tanggal
+                fetch(url)
+                    .then(res => res.json())
+                    .then(res => {
+
                     })
                     .catch(err => console.log(err));
             },

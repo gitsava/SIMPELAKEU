@@ -16,7 +16,8 @@ class GeneratePdfController extends Controller
     private $sign = '';
 
     public function headerform(){
-       $this->header = '<table style="height: 100px;" border="1" cellspacing="4" cellpadding="1">
+       $this->header = '<div style="position: fixed; top: -40px; left: 0px; right: 0px; height: 200px">
+                        <table style="height: 100px;" border="1" cellspacing="4" cellpadding="1">
                         <tbody>
                         <tr style="height: 2px;">
                         <td style="height: 10.7327px; width: 80px;" rowspan="4"><img height="80" width="80" src="storage/ipb.png" /></td>
@@ -39,17 +40,20 @@ class GeneratePdfController extends Controller
                         <td style="height: 1px; width: 171px;">: 6</td>
                         </tr>
                         </tbody>
-                        </table>';
+                        </table>
+                        </div>';
         return $this->header;
     }
 
     public function footerform(){
-        $this->footer = '<p>&nbsp;</p>
+        $this->footer = '<div style="position: fixed; bottom: 0px; left: 0px; right: 0px; height: 100px">
+                        <p>&nbsp;</p>
                         <hr style="display: block; height: 1px; border: 0; 
                             border-top: 4px solid #800000; border-bottom: 1px solid #800000; margin: 1em 0; padding: 0;" />
                         <p style="text-align: center;"><strong>PUSAT STUDI BIOFARMAKA TROPIKA LPPM-IPB</strong></p>
                         <p style="text-align: center;">Kampus IPB Taman Kencana, Jl. Taman Kencana No. 3, Bogor 16128 <br /> 
-                            Telp/Faks: 0251-8373561/0251-8347525; Email: bfarmaka@gmail.com; Website: http://biofarmaka.ipb.ac.id</p>';
+                            Telp/Faks: 0251-8373561/0251-8347525; Email: bfarmaka@gmail.com; Website: http://biofarmaka.ipb.ac.id</p>
+                        </div>';
         return $this->footer;
     }
 
@@ -93,7 +97,7 @@ class GeneratePdfController extends Controller
     }
 
     public function bodyform($transaksiAll){
-        $tableheader = '<table style="margin-left: 10px; margin-top: 10px; border: 1px solid black;">
+        $tableheader = '<table style="margin-left: 10px; margin-top: 90px; border: 1px solid black;" width="540">
                         <tbody>
                         <tr style="height: 12px;">  
                         <td style="height: 12px;" width="173">Nama Kegiatan</td>
@@ -150,8 +154,8 @@ class GeneratePdfController extends Controller
             $no++;
             $total = $total + $subtotal;
         }
-        if(($no-1)<7){
-            for($i=$no; $i<=7; $i++){
+        if(($no-1)<10){
+            for($i=$no; $i<=10; $i++){
                 $itemBody = $itemBody.'<tr style="height: 35px;">
                                         <td style="height: 35px;" width="30">&nbsp;</td>
                                         <td style="height: 35px;" width="200">&nbsp;</td>

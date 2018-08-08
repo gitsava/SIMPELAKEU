@@ -127,6 +127,9 @@
                 jumlah: [],
                 unit: [],
             }),
+            dlForm: new Form({
+                transaksiList: []
+            }),
             subTotal: [],
             proyekDisabled: true,
             peneliti: [],
@@ -202,6 +205,8 @@
                             'Pengajuan dana telah berhasil disimpan.',
                             'success'
                         )
+                        this.dlForm.transaksiList = data.data;
+                        this.downloadPdf();
                         this.form.reset()
                         this.arrayField = [1]
                         this.subTotal = []
@@ -210,7 +215,8 @@
                     })
             },
             downloadPdf(){
-
+                let url = 'api/asisten/pengajuan/downloadpdf'
+                this.dlForm.post(url)
             },
             loadOptions(){
                 return this.options.length <= 0 ? this.populateOptions() : null
