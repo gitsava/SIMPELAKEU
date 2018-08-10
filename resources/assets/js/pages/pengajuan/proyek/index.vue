@@ -203,7 +203,7 @@
                 jumlah: 0,
                 unit: null,
                 keterangan: null,
-                subTotal
+                subTotal:0,
             }),
             options: [],
             tanggal: new Date(),
