@@ -17,7 +17,7 @@
     "@fortawesome/fontawesome-free-solid": "^5.0.12",
     "@fortawesome/vue-fontawesome": "^0.0.22",
     "@tarunbatta/excelexportjs": "^4.0.3",
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "bootstrap": "^4.0.0",
     "bootstrap-sass": "^3.3.7",
     "chart.js": "^2.7.2",
